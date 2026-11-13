@@ -20,6 +20,32 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 - **Revisión B** cada **20.000 km**. Cuando coincide con una A, la B la reemplaza.
 - A los **80.000 km** (y múltiplos), la B incluye cambio de líquido de radiador (solo mano de obra).
 
+
+## Capturas de pantalla
+
+Estas capturas son de la versión web, con datos de ejemplo (Honda Civic 2020, 45.000 km y 1.200 km/mes).
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/screenshots/01-registrar.png" alt="Pantalla para registrar el carro" width="220" />
+      <br /><sub>Registrar el carro</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/screenshots/02-plan.png" alt="Pantalla del plan con las próximas revisiones" width="220" />
+      <br /><sub>Plan de mantenimiento</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/screenshots/03-detalle-revision-b.png" alt="Detalle de una Revisión B" width="220" />
+      <br /><sub>Detalle de una Revisión B</sub>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <img src="docs/screenshots/04-historial.png" alt="Pantalla de historial con un servicio de ejemplo" width="220" />
+      <br /><sub>Historial de servicios</sub>
+    </td>
+  </tr>
+</table>
+
 ## Cómo correrla
 
 Necesitás Node.js 18 o superior y la app **Expo Go** en el teléfono.
