@@ -34,6 +34,14 @@
           "color": "#0F6B7A",
           "defaultChannel": "mantenimiento"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Usamos tus fotos para que puedas agregar imágenes opcionales de tu carro.",
+          "cameraPermission": "Usamos la cámara para que puedas tomar fotos opcionales de tu carro.",
+          "microphonePermission": false
+        }
       ]
     ],
     "notification": {

@@ -88,4 +88,31 @@ describe('storage', () => {
   it('devuelve lista vacía si no hay historial', async () => {
     await expect(loadHistory()).resolves.toEqual([]);
   });
+
+  it('carga un vehículo antiguo sin placa ni fotos', async () => {
+    const legacy = {
+      brand: 'Honda',
+      dealerId: 'faco',
+      model: 'Civic',
+      year: 2020,
+      currentKm: 45_000,
+      avgKmPerMonth: 1_200,
+      updatedAt: '2026-11-13T00:00:00.000Z',
+    };
+    store.set('@my-car-maintenance/vehicle', JSON.stringify(legacy));
+    const loaded = await loadVehicle();
+    expect(loaded).toEqual(legacy);
+    expect(loaded?.plate).toBeUndefined();
+    expect(loaded?.photoUris).toBeUndefined();
+  });
+
+  it('guarda y lee la placa y las fotos cuando existen', async () => {
+    const withExtras: Vehicle = {
+      ...vehicle,
+      plate: 'BCD123',
+      photoUris: ['file:///documents/vehicle-photos/photo-1.jpg'],
+    };
+    await saveVehicle(withExtras);
+    await expect(loadVehicle()).resolves.toEqual(withExtras);
+  });
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, Card, PrimaryButton, SecondaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
@@ -44,9 +44,17 @@ export default function PlanScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
+          {vehicle.photoUris?.[0] ? (
+            <Image
+              source={{ uri: vehicle.photoUris[0] }}
+              style={styles.heroPhoto}
+              accessibilityLabel="Foto del vehículo"
+            />
+          ) : null}
           <View style={styles.flex}>
             <Text style={styles.kicker}>{plan?.dealerFullName ?? 'Honda Costa Rica'}</Text>
             <Text style={styles.title}>{vehicleLabel(vehicle)}</Text>
+            {vehicle.plate ? <Text style={styles.plate}>Placa {vehicle.plate}</Text> : null}
             <Text style={styles.meta}>
               {formatKm(vehicle.currentKm)} · {vehicle.avgKmPerMonth.toLocaleString('es-CR')} km/mes
             </Text>
@@ -56,6 +64,23 @@ export default function PlanScreen({ navigation }: Props) {
             <Text style={styles.editLabel}>Editar</Text>
           </Pressable>
         </View>
+
+        {vehicle.photoUris && vehicle.photoUris.length > 1 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoStrip}
+          >
+            {vehicle.photoUris.map((uri, index) => (
+              <Image
+                key={`${uri}-${index}`}
+                source={{ uri }}
+                style={styles.stripPhoto}
+                accessibilityLabel={`Foto ${index + 1} del vehículo`}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
 
         {pendingTasks.length > 0 ? (
           <View style={styles.pendingSection}>
@@ -167,7 +192,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: { fontSize: 24, fontWeight: '800', color: colors.ink },
+  plate: { color: colors.ink, marginTop: 4, fontSize: 15, fontWeight: '700' },
   meta: { color: colors.muted, marginTop: 4, fontSize: 14 },
+  heroPhoto: {
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: colors.line,
+  },
+  photoStrip: { gap: 8, marginBottom: spacing.lg },
+  stripPhoto: {
+    width: 72,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: colors.line,
+  },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
   editLabel: { color: colors.primary, fontWeight: '700' },
   pendingSection: { marginBottom: spacing.lg },
