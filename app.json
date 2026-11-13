@@ -1,23 +1,23 @@
 {
   "expo": {
-    "name": "Mantenimiento Honda",
-    "slug": "mantenimiento-honda",
+    "name": "My Car Maintenance",
+    "slug": "my-car-maintenance",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "mantenimientohonda",
+    "scheme": "mycarmaintenance",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fabiobenavides.mantenimientohonda",
+      "bundleIdentifier": "com.fabiobenavides.mycarmaintenance",
       "infoPlist": {
-        "NSUserNotificationsUsageDescription": "Usamos notificaciones para recordarte la próxima revisión de tu Honda."
+        "NSUserNotificationsUsageDescription": "Usamos notificaciones para recordarte la próxima revisión de tu carro."
       }
     },
     "android": {
-      "package": "com.fabiobenavides.mantenimientohonda",
+      "package": "com.fabiobenavides.mycarmaintenance",
       "adaptiveIcon": {
-        "backgroundColor": "#C8102E",
+        "backgroundColor": "#0F6B7A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,13 +31,13 @@
       [
         "expo-notifications",
         {
-          "color": "#C8102E",
+          "color": "#0F6B7A",
           "defaultChannel": "mantenimiento"
         }
       ]
     ],
     "notification": {
-      "color": "#C8102E"
+      "color": "#0F6B7A"
     },
     "extra": {
       "eas": {

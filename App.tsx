@@ -24,7 +24,7 @@ function MainTabs() {
     <Tabs.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.hondaRed,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line },
         tabBarLabelStyle: { fontWeight: '700', fontSize: 12 },
@@ -56,7 +56,7 @@ function RootNavigator() {
   if (!ready) {
     return (
       <View style={styles.splash}>
-        <ActivityIndicator size="large" color={colors.hondaRed} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -67,7 +67,7 @@ function RootNavigator() {
     <Stack.Navigator
       key={vehicle ? 'app' : 'onboarding'}
       screenOptions={{
-        headerStyle: { backgroundColor: colors.hondaRed },
+        headerStyle: { backgroundColor: colors.primary },
         headerTintColor: colors.white,
         headerTitleStyle: { fontWeight: '700' },
         contentStyle: { backgroundColor: colors.background },

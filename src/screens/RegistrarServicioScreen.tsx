@@ -187,7 +187,7 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
                       <Ionicons
                         name={checked ? 'checkbox' : 'square-outline'}
                         size={22}
-                        color={checked ? colors.hondaRed : colors.muted}
+                        color={checked ? colors.primary : colors.muted}
                       />
                       <Text style={[styles.taskName, !checked && styles.taskNameOff]}>{task.name}</Text>
                     </Pressable>

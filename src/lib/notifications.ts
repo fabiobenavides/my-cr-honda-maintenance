@@ -50,7 +50,7 @@ export async function scheduleNextServiceReminder(
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Mantenimiento Honda próximo',
+        title: 'Próximo mantenimiento de tu carro',
         body: `Revisión ${service.code} a los ${formatKm(service.km)}, estimada para el ${formatDate(triggerDate)}.${radiator}`,
       },
       trigger: {
