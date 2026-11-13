@@ -25,11 +25,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [storedVehicle, storedHistory] = await Promise.all([loadVehicle(), loadHistory()]);
-      if (cancelled) return;
-      setVehicle(storedVehicle);
-      setHistory(storedHistory);
-      setReady(true);
+      try {
+        const [storedVehicle, storedHistory] = await Promise.all([loadVehicle(), loadHistory()]);
+        if (cancelled) return;
+        setVehicle(storedVehicle);
+        setHistory(storedHistory);
+      } catch {
+        if (cancelled) return;
+        setVehicle(null);
+        setHistory([]);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
     })();
     return () => {
       cancelled = true;
