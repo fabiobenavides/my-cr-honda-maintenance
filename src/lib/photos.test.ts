@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Platform } from 'react-native';
 import {
+  MAX_SERVICE_PHOTOS,
   MAX_VEHICLE_PHOTOS,
+  deletePhoto,
   deleteRemovedPhotos,
+  deleteServicePhoto,
   deleteVehiclePhoto,
   extensionFromUri,
   isAppStoredPhoto,
+  limitPhotos,
+  optionalPhotoUris,
+  persistServicePhoto,
   persistVehiclePhoto,
 } from './photos';
 
-const created: string[] = [];
 const deleted: string[] = [];
 const copied: Array<{ from: string; to: string }> = [];
 
@@ -57,14 +62,24 @@ function setPlatform(os: string) {
 
 describe('photos', () => {
   beforeEach(() => {
-    created.length = 0;
     deleted.length = 0;
     copied.length = 0;
     setPlatform('ios');
   });
 
-  it('limita a 6 fotos', () => {
+  it('limita a 6 fotos del vehículo y 5 del servicio', () => {
     expect(MAX_VEHICLE_PHOTOS).toBe(6);
+    expect(MAX_SERVICE_PHOTOS).toBe(5);
+    expect(limitPhotos(['a', 'b', 'c', 'd', 'e', 'f', 'g'], MAX_SERVICE_PHOTOS)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+    ]);
+    expect(optionalPhotoUris([], MAX_SERVICE_PHOTOS)).toBeUndefined();
+    expect(optionalPhotoUris(undefined, MAX_SERVICE_PHOTOS)).toBeUndefined();
+    expect(optionalPhotoUris(['one'], MAX_SERVICE_PHOTOS)).toEqual(['one']);
   });
 
   it('deduce la extensión de la URI o del tipo MIME', () => {
@@ -73,15 +88,24 @@ describe('photos', () => {
     expect(extensionFromUri('file:///cache/photo')).toBe('jpg');
   });
 
-  it('solo considera propias las fotos del directorio de la app', () => {
+  it('solo considera propias las fotos del directorio de esa clase', () => {
     expect(isAppStoredPhoto('file:///documents/vehicle-photos/photo-1.jpg')).toBe(true);
     expect(isAppStoredPhoto('file:///cache/ImagePicker/abc.jpg')).toBe(false);
+    expect(isAppStoredPhoto('file:///documents/service-photos/photo-1.jpg')).toBe(false);
+    expect(isAppStoredPhoto('file:///documents/service-photos/photo-1.jpg', 'service')).toBe(true);
+    expect(isAppStoredPhoto('file:///documents/vehicle-photos/photo-1.jpg', 'service')).toBe(false);
   });
 
-  it('en nativo copia la foto al directorio de documentos', async () => {
+  it('en nativo copia la foto del vehículo al directorio de documentos', async () => {
     const dest = await persistVehiclePhoto('file:///cache/picker/abc.png', 'image/png');
     expect(dest).toMatch(/^file:\/\/\/documents\/vehicle-photos\/photo-\d+-[a-z0-9]+\.png$/);
     expect(copied).toEqual([{ from: 'file:///cache/picker/abc.png', to: dest }]);
+  });
+
+  it('en nativo copia la foto del servicio a una carpeta distinta', async () => {
+    const dest = await persistServicePhoto('file:///cache/picker/factura.jpg', 'image/jpeg');
+    expect(dest).toMatch(/^file:\/\/\/documents\/service-photos\/photo-\d+-[a-z0-9]+\.jpg$/);
+    expect(copied).toEqual([{ from: 'file:///cache/picker/factura.jpg', to: dest }]);
   });
 
   it('en web deja una data URI tal cual', async () => {
@@ -121,9 +145,16 @@ describe('photos', () => {
     expect(deleted).toEqual(['file:///documents/vehicle-photos/photo-1.jpg']);
   });
 
+  it('al borrar fotos de un servicio no toca las del vehículo', async () => {
+    await deleteServicePhoto('file:///documents/service-photos/factura.jpg');
+    await deleteServicePhoto('file:///documents/vehicle-photos/photo-1.jpg');
+    expect(deleted).toEqual(['file:///documents/service-photos/factura.jpg']);
+  });
+
   it('en web no intenta borrar archivos', async () => {
     setPlatform('web');
     await deleteVehiclePhoto('file:///documents/vehicle-photos/photo-1.jpg');
+    await deletePhoto('file:///documents/service-photos/factura.jpg', 'service');
     expect(deleted).toEqual([]);
   });
 
@@ -136,5 +167,20 @@ describe('photos', () => {
       ['file:///documents/vehicle-photos/keep.jpg'],
     );
     expect(deleted).toEqual(['file:///documents/vehicle-photos/drop.jpg']);
+  });
+
+  it('borra todas las fotos de un servicio al vaciar la lista', async () => {
+    await deleteRemovedPhotos(
+      [
+        'file:///documents/service-photos/one.jpg',
+        'file:///documents/service-photos/two.jpg',
+      ],
+      undefined,
+      'service',
+    );
+    expect(deleted).toEqual([
+      'file:///documents/service-photos/one.jpg',
+      'file:///documents/service-photos/two.jpg',
+    ]);
   });
 });

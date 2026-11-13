@@ -35,6 +35,8 @@ export interface ServiceRecord {
   includesRadiator?: boolean;
   /** Ids de tareas hechas. Ausente = todas hechas (registros antiguos). */
   completedTaskIds?: string[];
+  /** URIs locales de fotos opcionales del servicio (factura, escaneo, etc.). */
+  photoUris?: string[];
 }
 
 export function vehicleLabel(vehicle: Vehicle): string {

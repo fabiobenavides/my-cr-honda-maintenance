@@ -1,8 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { PhotoViewer } from '../components/PhotoViewer';
 import { Badge, Card, PrimaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
 import { FACO_HONDA_PLAN, getPlan } from '../data/faco-honda';
@@ -10,7 +12,7 @@ import { confirm } from '../lib/confirm';
 import { formatColon, formatIsoDate, formatKm } from '../lib/format';
 import { pendingTaskCountForRecord } from '../lib/schedule';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
-import { colors, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Historial'>,
@@ -20,6 +22,7 @@ type Props = CompositeScreenProps<
 export default function HistorialScreen({ navigation }: Props) {
   const { vehicle, history, deleteService } = useApp();
   const plan = (vehicle && getPlan(vehicle.brand, vehicle.dealerId)) || FACO_HONDA_PLAN;
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
 
   async function confirmDelete(id: string, label: string) {
     const accepted = await confirm('Eliminar registro', `¿Querés borrar ${label}?`, {
@@ -35,7 +38,9 @@ export default function HistorialScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Historial</Text>
-        <Text style={styles.subtitle}>Servicios que ya hiciste, con fecha, kilómetros, taller y costo.</Text>
+        <Text style={styles.subtitle}>
+          Servicios que ya hiciste, con fecha, kilómetros, taller, costo y fotos opcionales.
+        </Text>
 
         <View style={styles.actions}>
           <PrimaryButton label="Registrar servicio" onPress={() => navigation.navigate('RegistrarServicio')} />
@@ -52,6 +57,7 @@ export default function HistorialScreen({ navigation }: Props) {
           history.map((record) => {
             const label = `Revisión ${record.serviceCode} a los ${formatKm(record.km)}`;
             const pendingCount = pendingTaskCountForRecord(record, plan);
+            const photos = record.photoUris ?? [];
             return (
               <Card key={record.id} style={styles.card}>
                 <View style={styles.row}>
@@ -71,6 +77,23 @@ export default function HistorialScreen({ navigation }: Props) {
                         ) : null}
                       </View>
                     ) : null}
+                    {photos.length > 0 ? (
+                      <View style={styles.photoRow}>
+                        {photos.map((uri, index) => (
+                          <Pressable
+                            key={`${record.id}-${uri}-${index}`}
+                            onPress={() => setViewerUri(uri)}
+                            accessibilityLabel={`Ver foto ${index + 1} del servicio`}
+                          >
+                            <Image
+                              source={{ uri }}
+                              style={styles.thumb}
+                              accessibilityLabel={`Foto ${index + 1} del servicio`}
+                            />
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
                   </View>
                   <Pressable onPress={() => confirmDelete(record.id, label)} hitSlop={8}>
                     <Text style={styles.delete}>Eliminar</Text>
@@ -81,6 +104,7 @@ export default function HistorialScreen({ navigation }: Props) {
           })
         )}
       </ScrollView>
+      <PhotoViewer uri={viewerUri} onClose={() => setViewerUri(null)} />
     </SafeAreaView>
   );
 }
@@ -101,5 +125,17 @@ const styles = StyleSheet.create({
   detail: { color: colors.muted, marginTop: 3, fontSize: 14 },
   cost: { marginTop: 8, fontWeight: '700', fontSize: 16, color: colors.ink },
   badgeWrap: { marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  photoRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    backgroundColor: colors.line,
+  },
   delete: { color: colors.primary, fontWeight: '700' },
 });
