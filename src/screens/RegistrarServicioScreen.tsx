@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,10 +12,18 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import { ErrorText, FieldLabel, PrimaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
 import { FACO_HONDA_PLAN, getPlan, groupTasksByArea, tasksForService } from '../data/faco-honda';
+import { confirm } from '../lib/confirm';
 import { isoToDisplay, parseFlexibleDate, toIsoDate } from '../lib/format';
+import {
+  MAX_SERVICE_PHOTOS,
+  deleteServicePhoto,
+  optionalPhotoUris,
+  persistServicePhoto,
+} from '../lib/photos';
 import { serviceAtKm } from '../lib/schedule';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../theme';
@@ -32,6 +41,7 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
   const [km, setKm] = useState(prefillKm != null ? String(prefillKm) : vehicle ? String(vehicle.currentKm) : '');
   const [workshop, setWorkshop] = useState('FACO');
   const [cost, setCost] = useState('');
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   /** null = todas seleccionadas (default / al cambiar km). */
@@ -58,12 +68,81 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
   }, [selectedTaskIds, allTaskIds]);
 
   const grouped = useMemo(() => groupTasksByArea(tasks), [tasks]);
+  const remainingPhotos = MAX_SERVICE_PHOTOS - photoUris.length;
 
   function toggleTask(taskId: string) {
     const next = new Set(effectiveSelected);
     if (next.has(taskId)) next.delete(taskId);
     else next.add(taskId);
     setSelectedTaskIds(next);
+  }
+
+  async function addPhotos(source: 'library' | 'camera') {
+    if (remainingPhotos <= 0) return;
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.photos;
+      return next;
+    });
+
+    try {
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setErrors((current) => ({
+            ...current,
+            photos:
+              'No pudimos acceder a la cámara. Revisá los permisos de la app e intentá de nuevo.',
+          }));
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          quality: 0.8,
+        });
+        if (result.canceled || !result.assets?.[0]) return;
+        const uri = await persistServicePhoto(result.assets[0].uri, result.assets[0].mimeType);
+        setPhotoUris((current) => [...current, uri].slice(0, MAX_SERVICE_PHOTOS));
+        return;
+      }
+
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setErrors((current) => ({
+          ...current,
+          photos: 'No pudimos acceder a tus fotos. Revisá los permisos de la app e intentá de nuevo.',
+        }));
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+        allowsMultipleSelection: remainingPhotos > 1,
+        selectionLimit: remainingPhotos,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      const persisted: string[] = [];
+      for (const asset of result.assets.slice(0, remainingPhotos)) {
+        persisted.push(await persistServicePhoto(asset.uri, asset.mimeType));
+      }
+      setPhotoUris((current) => [...current, ...persisted].slice(0, MAX_SERVICE_PHOTOS));
+    } catch {
+      setErrors((current) => ({
+        ...current,
+        photos: 'No pudimos agregar la foto. Intentá de nuevo.',
+      }));
+    }
+  }
+
+  async function removePhoto(uri: string) {
+    const ok = await confirm('Quitar foto', '¿Querés quitar esta foto del servicio?', {
+      cancelText: 'Cancelar',
+      confirmText: 'Quitar',
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteServicePhoto(uri);
+    setPhotoUris((current) => current.filter((item) => item !== uri));
   }
 
   async function onSubmit() {
@@ -92,6 +171,7 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
       serviceCode,
       includesRadiator,
       completedTaskIds: [...effectiveSelected],
+      photoUris: optionalPhotoUris(photoUris, MAX_SERVICE_PHOTOS),
     };
 
     setSaving(true);
@@ -163,6 +243,55 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
         />
         <ErrorText message={errors.cost} />
 
+        <FieldLabel>Fotos del servicio</FieldLabel>
+        <Text style={styles.hint}>
+          Opcional. Hasta {MAX_SERVICE_PHOTOS} fotos: la factura, un escaneo o el resultado de una prueba.
+        </Text>
+        {photoUris.length > 0 ? (
+          <View style={styles.photoRow}>
+            {photoUris.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={styles.thumbWrap}>
+                <Image
+                  source={{ uri }}
+                  style={styles.thumb}
+                  accessibilityLabel={`Foto ${index + 1} del servicio`}
+                />
+                <Pressable
+                  onPress={() => void removePhoto(uri)}
+                  style={styles.removeThumb}
+                  accessibilityLabel="Quitar foto"
+                  hitSlop={6}
+                >
+                  <Ionicons name="close" size={14} color={colors.white} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {remainingPhotos > 0 ? (
+          <View style={styles.photoActions}>
+            <Pressable
+              onPress={() => void addPhotos('library')}
+              style={({ pressed }) => [styles.photoBtn, pressed && styles.photoBtnPressed]}
+              accessibilityLabel="Agregar foto desde la galería"
+            >
+              <Ionicons name="images-outline" size={18} color={colors.primary} />
+              <Text style={styles.photoBtnLabel}>Galería</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => void addPhotos('camera')}
+              style={({ pressed }) => [styles.photoBtn, pressed && styles.photoBtnPressed]}
+              accessibilityLabel="Tomar foto con la cámara"
+            >
+              <Ionicons name="camera-outline" size={18} color={colors.primary} />
+              <Text style={styles.photoBtnLabel}>Cámara</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={styles.hint}>Ya agregaste el máximo de {MAX_SERVICE_PHOTOS} fotos.</Text>
+        )}
+        <ErrorText message={errors.photos} />
+
         {tasks.length > 0 ? (
           <View style={styles.checklist}>
             <Text style={styles.checklistTitle}>
@@ -222,6 +351,47 @@ const styles = StyleSheet.create({
     color: colors.ink,
     marginBottom: 4,
   },
+  hint: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: 8 },
+  photoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: spacing.sm,
+  },
+  thumbWrap: { width: 84, height: 84 },
+  thumb: {
+    width: 84,
+    height: 84,
+    borderRadius: radius.md,
+    backgroundColor: colors.line,
+  },
+  removeThumb: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoActions: { flexDirection: 'row', gap: 10, marginBottom: 4 },
+  photoBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+  },
+  photoBtnPressed: { opacity: 0.85 },
+  photoBtnLabel: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   checklist: { marginTop: spacing.lg },
   checklistTitle: { fontSize: 17, fontWeight: '800', color: colors.ink },
   checklistHint: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 4, marginBottom: spacing.sm },

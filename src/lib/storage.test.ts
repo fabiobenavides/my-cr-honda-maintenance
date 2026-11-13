@@ -116,3 +116,33 @@ describe('storage', () => {
     await expect(loadVehicle()).resolves.toEqual(withExtras);
   });
 });
+
+  it('carga un historial antiguo sin fotos del servicio', async () => {
+    const legacy: ServiceRecord[] = [
+      {
+        id: '1',
+        date: '2026-10-01',
+        km: 40_000,
+        workshop: 'FACO',
+        cost: 25_000,
+        serviceCode: 'A',
+        includesRadiator: false,
+        completedTaskIds: [],
+      },
+    ];
+    store.set('@my-car-maintenance/history', JSON.stringify(legacy));
+    const loaded = await loadHistory();
+    expect(loaded).toEqual(legacy);
+    expect(loaded[0]?.photoUris).toBeUndefined();
+  });
+
+  it('guarda y lee las fotos de un servicio cuando existen', async () => {
+    const withPhotos: ServiceRecord[] = [
+      {
+        ...history[0]!,
+        photoUris: ['file:///documents/service-photos/factura.jpg'],
+      },
+    ];
+    await saveHistory(withPhotos);
+    await expect(loadHistory()).resolves.toEqual(withPhotos);
+  });

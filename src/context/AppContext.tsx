@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { getPlan } from '../data/faco-honda';
 import { scheduleNextServiceReminder } from '../lib/notifications';
 import { upcomingServices } from '../lib/schedule';
+import { deleteRemovedPhotos } from '../lib/photos';
 import { loadHistory, loadVehicle, saveHistory, saveVehicle } from '../lib/storage';
 import type { ServiceRecord, Vehicle } from '../types';
 
@@ -88,7 +89,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteService = useCallback(async (id: string) => {
     setHistory((current) => {
-      const next = current.filter((record) => record.id !== id);
+      const record = current.find((item) => item.id === id);
+      if (record?.photoUris?.length) {
+        void deleteRemovedPhotos(record.photoUris, undefined, 'service');
+      }
+      const next = current.filter((item) => item.id !== id);
       void saveHistory(next);
       return next;
     });

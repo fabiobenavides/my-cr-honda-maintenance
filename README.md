@@ -11,7 +11,7 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 1. **Registrar carro.** Por ahora la marca queda fija en Honda. Elegís el modelo (Civic, CR-V, HR-V, Pilot, Accord, City u otros), el año, el kilometraje actual y los kilómetros promedio por mes. También podés agregar el número de placa y hasta 6 fotos opcionales del carro.
 2. **Plan.** Lista las próximas revisiones por kilometraje, con fecha estimada según lo que manejás al mes. La siguiente revisión va destacada.
 3. **Detalle de revisión.** Tareas agrupadas por área, con las marcas *si aplica*, *solo mano de obra* y *si amerita*. En la Revisión B también se listan los repuestos incluidos.
-4. **Historial.** Registrás servicios hechos (fecha, km, taller y costo) en el teléfono, con AsyncStorage.
+4. **Historial.** Registrás servicios hechos (fecha, km, taller, costo y hasta 5 fotos opcionales, por ejemplo la factura o un escaneo) en el teléfono, con AsyncStorage.
 5. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`).
 
 ### Plan de mantenimiento soportado: Honda (FACO, Costa Rica)
@@ -103,4 +103,5 @@ Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan.
 - Las fechas se muestran en español de Costa Rica (`es-CR`, zona `America/Costa_Rica`).
 - Los costos del historial van en colones (₡).
 - El recordatorio pide permiso de notificaciones. Si lo denegás, el plan y el historial siguen funcionando.
+- En la web, las fotos se guardan en el almacenamiento del navegador, que es limitado. Las imágenes muy grandes se reducen al guardarlas; aun así, varias fotos pueden llenar ese espacio. En el celular no pasa eso.
 - Esta app no sustituye el criterio del taller; es una guía del plan publicado por la agencia.
