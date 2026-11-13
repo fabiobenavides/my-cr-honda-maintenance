@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Badge, Card, PrimaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
 import { FACO_HONDA_PLAN, getPlan } from '../data/faco-honda';
+import { confirm } from '../lib/confirm';
 import { formatColon, formatIsoDate, formatKm } from '../lib/format';
 import { pendingTaskCountForRecord } from '../lib/schedule';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
@@ -20,11 +21,14 @@ export default function HistorialScreen({ navigation }: Props) {
   const { vehicle, history, deleteService } = useApp();
   const plan = (vehicle && getPlan(vehicle.brand, vehicle.dealerId)) || FACO_HONDA_PLAN;
 
-  function confirmDelete(id: string, label: string) {
-    Alert.alert('Eliminar registro', `¿Querés borrar ${label}?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: () => void deleteService(id) },
-    ]);
+  async function confirmDelete(id: string, label: string) {
+    const accepted = await confirm('Eliminar registro', `¿Querés borrar ${label}?`, {
+      cancelText: 'Cancelar',
+      confirmText: 'Eliminar',
+    });
+    if (accepted) {
+      await deleteService(id);
+    }
   }
 
   return (
