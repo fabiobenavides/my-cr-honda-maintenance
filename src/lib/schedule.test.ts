@@ -1,11 +1,14 @@
 import { describe, expect, it } from '@jest/globals';
-import { FACO_HONDA_PLAN } from '../data/faco-honda';
+import { FACO_HONDA_PLAN, tasksForService } from '../data/faco-honda';
+import type { ServiceRecord } from '../types';
 import {
   INTERVAL_A_KM,
   INTERVAL_B_KM,
   INTERVAL_RADIATOR_KM,
   estimateDate,
   nextServiceKm,
+  pendingTaskCountForRecord,
+  pendingTasksFromHistory,
   serviceAtKm,
   upcomingServices,
 } from './schedule';
@@ -134,5 +137,45 @@ describe('upcomingServices', () => {
     const list = upcomingServices(9_000, { count: 3, completedKms: [10_000] });
     expect(list.map((item) => item.km)).toEqual([15_000, 20_000, 25_000]);
     expect(list[0].isNext).toBe(true);
+  });
+});
+
+describe('pendingTasksFromHistory', () => {
+  const allAIds = tasksForService(FACO_HONDA_PLAN, 'A', 10_000).map((task) => task.id);
+
+  function record(partial: Partial<ServiceRecord> & Pick<ServiceRecord, 'id' | 'km'>): ServiceRecord {
+    return {
+      date: '2026-11-01',
+      workshop: 'FACO',
+      cost: 0,
+      serviceCode: 'A',
+      ...partial,
+    };
+  }
+
+  it('trata registros sin completedTaskIds como completos (legado)', () => {
+    const history = [record({ id: '1', km: 10_000 })];
+    expect(pendingTasksFromHistory(history)).toEqual([]);
+    expect(pendingTaskCountForRecord(history[0])).toBe(0);
+  });
+
+  it('devuelve solo las tareas omitidas en un registro parcial', () => {
+    const skippedId = allAIds[0];
+    const completed = allAIds.filter((id) => id !== skippedId);
+    const history = [record({ id: '1', km: 10_000, completedTaskIds: completed })];
+    const pending = pendingTasksFromHistory(history);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      recordId: '1',
+      km: 10_000,
+      serviceCode: 'A',
+      task: { id: skippedId },
+    });
+    expect(pendingTaskCountForRecord(history[0])).toBe(1);
+  });
+
+  it('no deja pendientes si completedTaskIds cubre todas las tareas', () => {
+    const history = [record({ id: '1', km: 10_000, completedTaskIds: allAIds })];
+    expect(pendingTasksFromHistory(history)).toEqual([]);
   });
 });

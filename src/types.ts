@@ -29,6 +29,8 @@ export interface ServiceRecord {
   cost: number;
   serviceCode: string;
   includesRadiator?: boolean;
+  /** Ids de tareas hechas. Ausente = todas hechas (registros antiguos). */
+  completedTaskIds?: string[];
 }
 
 export function vehicleLabel(vehicle: Vehicle): string {
