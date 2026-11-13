@@ -61,8 +61,11 @@ function RootNavigator() {
     );
   }
 
+  // Remount when vehicle appears/disappears so we leave Registrar and open Main.
+  // Without this key, Registrar stays as the active route after the first save.
   return (
     <Stack.Navigator
+      key={vehicle ? 'app' : 'onboarding'}
       screenOptions={{
         headerStyle: { backgroundColor: colors.hondaRed },
         headerTintColor: colors.white,
