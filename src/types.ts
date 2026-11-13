@@ -19,6 +19,10 @@ export interface Vehicle {
   currentKm: number;
   avgKmPerMonth: number;
   updatedAt: string;
+  /** Número de placa, opcional. Ya normalizado (mayúsculas, sin espacios). */
+  plate?: string;
+  /** URIs locales de fotos opcionales del vehículo. */
+  photoUris?: string[];
 }
 
 export interface ServiceRecord {
