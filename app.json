@@ -38,6 +38,11 @@
     ],
     "notification": {
       "color": "#C8102E"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2922ccf8-0b59-4ed0-950c-46587272fa59"
+      }
     }
   }
 }
