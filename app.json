@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Mantenimiento Honda",
+    "slug": "mantenimiento-honda",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "mantenimientohonda",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fabiobenavides.mantenimientohonda",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "Usamos notificaciones para recordarte la próxima revisión de tu Honda."
+      }
+    },
+    "android": {
+      "package": "com.fabiobenavides.mantenimientohonda",
+      "adaptiveIcon": {
+        "backgroundColor": "#C8102E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#C8102E",
+          "defaultChannel": "mantenimiento"
+        }
+      ]
+    ],
+    "notification": {
+      "color": "#C8102E"
+    }
+  }
+}
