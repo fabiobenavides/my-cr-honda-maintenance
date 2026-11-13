@@ -6,6 +6,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # Keep the ts-jest dual-compiler layout: `typescript` is aliased to
+    # @typescript/typescript6; native tsc comes from @typescript/native.
+    ignore:
+      - dependency-name: "typescript"
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "develop"
