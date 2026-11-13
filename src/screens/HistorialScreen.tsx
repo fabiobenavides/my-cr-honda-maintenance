@@ -5,7 +5,9 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Badge, Card, PrimaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
+import { FACO_HONDA_PLAN, getPlan } from '../data/faco-honda';
 import { formatColon, formatIsoDate, formatKm } from '../lib/format';
+import { pendingTaskCountForRecord } from '../lib/schedule';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../theme';
 
@@ -15,7 +17,8 @@ type Props = CompositeScreenProps<
 >;
 
 export default function HistorialScreen({ navigation }: Props) {
-  const { history, deleteService } = useApp();
+  const { vehicle, history, deleteService } = useApp();
+  const plan = (vehicle && getPlan(vehicle.brand, vehicle.dealerId)) || FACO_HONDA_PLAN;
 
   function confirmDelete(id: string, label: string) {
     Alert.alert('Eliminar registro', `¿Querés borrar ${label}?`, [
@@ -44,6 +47,7 @@ export default function HistorialScreen({ navigation }: Props) {
         ) : (
           history.map((record) => {
             const label = `Revisión ${record.serviceCode} a los ${formatKm(record.km)}`;
+            const pendingCount = pendingTaskCountForRecord(record, plan);
             return (
               <Card key={record.id} style={styles.card}>
                 <View style={styles.row}>
@@ -52,9 +56,15 @@ export default function HistorialScreen({ navigation }: Props) {
                     <Text style={styles.detail}>{formatIsoDate(record.date)}</Text>
                     <Text style={styles.detail}>{record.workshop || 'Taller no indicado'}</Text>
                     <Text style={styles.cost}>{formatColon(record.cost)}</Text>
-                    {record.includesRadiator ? (
+                    {record.includesRadiator || pendingCount > 0 ? (
                       <View style={styles.badgeWrap}>
-                        <Badge label="Incluyó radiador" tone="red" />
+                        {record.includesRadiator ? <Badge label="Incluyó radiador" tone="red" /> : null}
+                        {pendingCount > 0 ? (
+                          <Badge
+                            label={pendingCount === 1 ? '1 pendiente' : `${pendingCount} pendientes`}
+                            tone="red"
+                          />
+                        ) : null}
                       </View>
                     ) : null}
                   </View>
@@ -86,6 +96,6 @@ const styles = StyleSheet.create({
   service: { fontWeight: '800', fontSize: 16, color: colors.ink },
   detail: { color: colors.muted, marginTop: 3, fontSize: 14 },
   cost: { marginTop: 8, fontWeight: '700', fontSize: 16, color: colors.ink },
-  badgeWrap: { marginTop: 8 },
+  badgeWrap: { marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   delete: { color: colors.hondaRed, fontWeight: '700' },
 });

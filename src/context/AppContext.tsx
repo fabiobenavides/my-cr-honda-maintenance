@@ -11,6 +11,7 @@ type AppContextValue = {
   history: ServiceRecord[];
   saveVehicleData: (vehicle: Vehicle) => Promise<void>;
   addService: (record: ServiceRecord) => Promise<void>;
+  updateService: (id: string, patch: Partial<ServiceRecord>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
 };
 
@@ -70,6 +71,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateService = useCallback(async (id: string, patch: Partial<ServiceRecord>) => {
+    setHistory((current) => {
+      const next = current.map((record) => (record.id === id ? { ...record, ...patch } : record));
+      void saveHistory(next);
+      return next;
+    });
+  }, []);
+
   const deleteService = useCallback(async (id: string) => {
     setHistory((current) => {
       const next = current.filter((record) => record.id !== id);
@@ -79,8 +88,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ ready, vehicle, history, saveVehicleData, addService, deleteService }),
-    [ready, vehicle, history, saveVehicleData, addService, deleteService],
+    () => ({ ready, vehicle, history, saveVehicleData, addService, updateService, deleteService }),
+    [ready, vehicle, history, saveVehicleData, addService, updateService, deleteService],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,4 +1,10 @@
-import { FACO_HONDA_PLAN, type MaintenancePlan } from '../data/faco-honda';
+import {
+  FACO_HONDA_PLAN,
+  tasksForService,
+  type MaintenancePlan,
+  type MaintenanceTask,
+} from '../data/faco-honda';
+import type { ServiceRecord } from '../types';
 
 export const INTERVAL_A_KM = 5_000;
 export const INTERVAL_B_KM = 20_000;
@@ -132,4 +138,58 @@ export function upcomingServices(
   }
 
   return results;
+}
+
+export type PendingTaskItem = {
+  recordId: string;
+  km: number;
+  serviceCode: string;
+  task: MaintenanceTask;
+};
+
+/**
+ * Tareas del plan que no quedaron marcadas como hechas en un registro.
+ * Si `completedTaskIds` está ausente, el registro se trata como completo (legado).
+ */
+export function pendingTasksForRecord(
+  record: ServiceRecord,
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+): MaintenanceTask[] {
+  if (record.completedTaskIds == null) {
+    return [];
+  }
+  const expected = tasksForService(plan, record.serviceCode, record.km);
+  const done = new Set(record.completedTaskIds);
+  return expected.filter((task) => !done.has(task.id));
+}
+
+/**
+ * Pendientes de todo el historial, ordenados por km descendente y luego por nombre.
+ */
+export function pendingTasksFromHistory(
+  history: ServiceRecord[],
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+): PendingTaskItem[] {
+  const items: PendingTaskItem[] = [];
+  for (const record of history) {
+    for (const task of pendingTasksForRecord(record, plan)) {
+      items.push({
+        recordId: record.id,
+        km: record.km,
+        serviceCode: record.serviceCode,
+        task,
+      });
+    }
+  }
+  return items.sort(
+    (a, b) => b.km - a.km || a.task.name.localeCompare(b.task.name, 'es'),
+  );
+}
+
+/** Cuántas tareas quedan pendientes en un registro (0 si es legado o está completo). */
+export function pendingTaskCountForRecord(
+  record: ServiceRecord,
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+): number {
+  return pendingTasksForRecord(record, plan).length;
 }

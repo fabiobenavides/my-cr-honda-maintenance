@@ -8,7 +8,7 @@ import { Badge, Card, PrimaryButton, SecondaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
 import { getPlan } from '../data/faco-honda';
 import { formatDate, formatKm } from '../lib/format';
-import { upcomingServices } from '../lib/schedule';
+import { pendingTasksFromHistory, upcomingServices } from '../lib/schedule';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../theme';
 import { vehicleLabel } from '../types';
@@ -19,7 +19,7 @@ type Props = CompositeScreenProps<
 >;
 
 export default function PlanScreen({ navigation }: Props) {
-  const { vehicle, history } = useApp();
+  const { vehicle, history, updateService } = useApp();
   if (!vehicle) return null;
 
   const plan = getPlan(vehicle.brand, vehicle.dealerId);
@@ -30,6 +30,15 @@ export default function PlanScreen({ navigation }: Props) {
     plan,
   });
   const next = upcoming[0];
+  const pendingTasks = plan ? pendingTasksFromHistory(history, plan) : [];
+
+  async function markPendingDone(recordId: string, taskId: string) {
+    const record = history.find((item) => item.id === recordId);
+    if (!record || !plan) return;
+    const currentDone = new Set(record.completedTaskIds ?? []);
+    currentDone.add(taskId);
+    await updateService(recordId, { completedTaskIds: [...currentDone] });
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -47,6 +56,34 @@ export default function PlanScreen({ navigation }: Props) {
             <Text style={styles.editLabel}>Editar</Text>
           </Pressable>
         </View>
+
+        {pendingTasks.length > 0 ? (
+          <View style={styles.pendingSection}>
+            <Text style={styles.sectionTitle}>Tareas pendientes</Text>
+            <Text style={styles.sectionHint}>
+              Puntos que no se hicieron en una revisión anterior. Marcálos cuando los completes.
+            </Text>
+            {pendingTasks.map((item) => (
+              <Card key={`${item.recordId}-${item.task.id}`} style={styles.card}>
+                <View style={styles.pendingRow}>
+                  <View style={styles.flex}>
+                    <Text style={styles.pendingTask}>{item.task.name}</Text>
+                    <Text style={styles.pendingMeta}>
+                      Revisión {item.serviceCode} · {formatKm(item.km)}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => void markPendingDone(item.recordId, item.task.id)}
+                    style={({ pressed }) => [styles.markBtn, pressed && styles.markBtnPressed]}
+                    hitSlop={6}
+                  >
+                    <Text style={styles.markLabel}>Hecha</Text>
+                  </Pressable>
+                </View>
+              </Card>
+            ))}
+          </View>
+        ) : null}
 
         <Text style={styles.sectionTitle}>Próximas revisiones</Text>
         <Text style={styles.sectionHint}>
@@ -133,9 +170,21 @@ const styles = StyleSheet.create({
   meta: { color: colors.muted, marginTop: 4, fontSize: 14 },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
   editLabel: { color: colors.hondaRed, fontWeight: '700' },
+  pendingSection: { marginBottom: spacing.lg },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.ink, marginBottom: 6 },
   sectionHint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginBottom: spacing.md },
   card: { marginBottom: spacing.sm },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pendingTask: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  pendingMeta: { color: colors.muted, marginTop: 4, fontSize: 13 },
+  markBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.hondaRed,
+  },
+  markBtnPressed: { opacity: 0.85 },
+  markLabel: { color: colors.white, fontWeight: '700', fontSize: 13 },
   cardHeader: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   serviceName: { fontSize: 16, fontWeight: '800', color: colors.ink },
   serviceDate: { color: colors.muted, marginTop: 4, fontSize: 13 },
