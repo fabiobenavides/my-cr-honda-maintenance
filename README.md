@@ -23,17 +23,17 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 
 ## Capturas de pantalla
 
-Estas capturas son de la versión web, con datos de ejemplo (Honda Civic 2020, 45.000 km y 1.200 km/mes).
+Estas capturas son de la versión web, con datos de ejemplo (Honda Civic 2020, placa BCD123, 45.000 km, 1.200 km/mes y una foto de ejemplo).
 
 <table>
   <tr>
     <td align="center" valign="top" width="25%">
-      <img src="docs/screenshots/01-registrar.png" alt="Pantalla para registrar el carro" width="220" />
-      <br /><sub>Registrar el carro</sub>
+      <img src="docs/screenshots/01-registrar.png" alt="Pantalla para registrar el carro, con número de placa y una foto de ejemplo" width="220" />
+      <br /><sub>Registrar el carro, con placa y foto</sub>
     </td>
     <td align="center" valign="top" width="25%">
-      <img src="docs/screenshots/02-plan.png" alt="Pantalla del plan con las próximas revisiones" width="220" />
-      <br /><sub>Plan de mantenimiento</sub>
+      <img src="docs/screenshots/02-plan.png" alt="Pantalla del plan con la placa, la foto y las próximas revisiones" width="220" />
+      <br /><sub>Plan de mantenimiento, con placa y foto</sub>
     </td>
     <td align="center" valign="top" width="25%">
       <img src="docs/screenshots/03-detalle-revision-b.png" alt="Detalle de una Revisión B" width="220" />
