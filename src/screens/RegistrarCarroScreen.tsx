@@ -90,9 +90,13 @@ export default function RegistrarCarroScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.safe} edges={editing ? ['bottom'] : ['top', 'bottom']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.kicker}>Mantenimiento Honda</Text>
+          <Text style={styles.kicker}>My Car Maintenance</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={styles.disclaimer}>
+            App independiente. No está afiliada, patrocinada ni respaldada por Honda ni por Franz
+            Amrhein & Co. (FACO). Las marcas mencionadas pertenecen a sus dueños.
+          </Text>
 
           <FieldLabel>Marca</FieldLabel>
           <View style={styles.locked}>
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 40 },
   kicker: {
-    color: colors.hondaRed,
+    color: colors.primary,
     fontWeight: '800',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: { fontSize: 28, fontWeight: '800', color: colors.ink, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: colors.muted, lineHeight: 22, marginBottom: spacing.lg },
+  subtitle: { fontSize: 15, color: colors.muted, lineHeight: 22, marginBottom: 8 },
   locked: {
     backgroundColor: '#EEEFF2',
     borderRadius: radius.md,
@@ -211,8 +215,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   modelChipSelected: {
-    backgroundColor: colors.hondaRed,
-    borderColor: colors.hondaRed,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   modelChipText: { color: colors.ink, fontWeight: '700' },
   modelChipTextSelected: { color: colors.white },
@@ -228,5 +232,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   hint: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: 4 },
+  disclaimer: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: spacing.lg,
+  },
   footer: { marginTop: spacing.lg },
 });

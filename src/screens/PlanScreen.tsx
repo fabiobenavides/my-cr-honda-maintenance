@@ -52,7 +52,7 @@ export default function PlanScreen({ navigation }: Props) {
             </Text>
           </View>
           <Pressable onPress={() => navigation.navigate('Registrar', { edit: true })} style={styles.editBtn}>
-            <Ionicons name="create-outline" size={18} color={colors.hondaRed} />
+            <Ionicons name="create-outline" size={18} color={colors.primary} />
             <Text style={styles.editLabel}>Editar</Text>
           </Pressable>
         </View>
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', gap: 12, marginBottom: spacing.lg, alignItems: 'flex-start' },
   flex: { flex: 1 },
   kicker: {
-    color: colors.hondaRed,
+    color: colors.primary,
     fontWeight: '800',
     fontSize: 11,
     textTransform: 'uppercase',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: colors.ink },
   meta: { color: colors.muted, marginTop: 4, fontSize: 14 },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
-  editLabel: { color: colors.hondaRed, fontWeight: '700' },
+  editLabel: { color: colors.primary, fontWeight: '700' },
   pendingSection: { marginBottom: spacing.lg },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: colors.ink, marginBottom: 6 },
   sectionHint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginBottom: spacing.md },
@@ -181,15 +181,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: colors.hondaRed,
+    backgroundColor: colors.primary,
   },
   markBtnPressed: { opacity: 0.85 },
   markLabel: { color: colors.white, fontWeight: '700', fontSize: 13 },
   cardHeader: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   serviceName: { fontSize: 16, fontWeight: '800', color: colors.ink },
   serviceDate: { color: colors.muted, marginTop: 4, fontSize: 13 },
-  radiator: { marginTop: 8, color: colors.hondaRedDark, fontSize: 13, fontWeight: '600' },
-  link: { marginTop: 10, color: colors.hondaRed, fontWeight: '700' },
+  radiator: { marginTop: 8, color: colors.primaryDark, fontSize: 13, fontWeight: '600' },
+  link: { marginTop: 10, color: colors.primary, fontWeight: '700' },
   empty: { color: colors.muted },
   actions: { marginTop: spacing.md },
 });

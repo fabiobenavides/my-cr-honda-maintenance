@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   button: {
-    backgroundColor: colors.hondaRed,
+    backgroundColor: colors.primary,
     borderRadius: radius.md,
     minHeight: 48,
     alignItems: 'center',
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: colors.hondaRed,
+    borderColor: colors.primary,
     backgroundColor: colors.white,
   },
   secondaryLabel: {
-    color: colors.hondaRed,
+    color: colors.primary,
     fontWeight: '700',
     fontSize: 15,
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDE7EB',
   },
   badgeRedText: {
-    color: colors.hondaRed,
+    color: colors.primary,
   },
   badgeGreen: {
     backgroundColor: '#E3F6EC',
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   error: {
-    color: colors.hondaRed,
+    color: colors.primary,
     marginTop: 6,
     fontSize: 13,
   },

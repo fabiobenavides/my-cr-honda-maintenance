@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 40 },
   kicker: {
-    color: colors.hondaRed,
+    color: colors.primary,
     fontWeight: '800',
     fontSize: 11,
     textTransform: 'uppercase',
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
-  statusText: { color: colors.hondaRedDark, fontWeight: '600', lineHeight: 20 },
+  statusText: { color: colors.primaryDark, fontWeight: '600', lineHeight: 20 },
   notice: {
     backgroundColor: colors.warningBg,
     borderRadius: 12,

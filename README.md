@@ -1,18 +1,20 @@
-# Mantenimiento Honda (FACO, Costa Rica)
+# My Car Maintenance
 
-App en español para llevar el plan de mantenimiento de un Honda según la agencia **FACO** (Franz Amrhein & Co.), distribuidor de Honda en Costa Rica. El plan es el mismo para todos los modelos Honda de la agencia.
+App en español para llevar el plan de mantenimiento de tu carro. El primer plan soportado es el de Honda según la agencia **FACO** (Franz Amrhein & Co.) en Costa Rica. El plan es el mismo para todos los modelos Honda de la agencia.
+
+> App independiente. No está afiliada, patrocinada ni respaldada por Honda ni por Franz Amrhein & Co. (FACO). Las marcas mencionadas pertenecen a sus dueños.
 
 Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK de Android sin escribir código nativo.
 
 ## Qué hace
 
-1. **Registrar carro.** La marca queda fija en Honda. Elegís el modelo (Civic, CR-V, HR-V, Pilot, Accord, City u otros), el año, el kilometraje actual y los kilómetros promedio por mes.
+1. **Registrar carro.** Por ahora la marca queda fija en Honda. Elegís el modelo (Civic, CR-V, HR-V, Pilot, Accord, City u otros), el año, el kilometraje actual y los kilómetros promedio por mes.
 2. **Plan.** Lista las próximas revisiones por kilometraje, con fecha estimada según lo que manejás al mes. La siguiente revisión va destacada.
 3. **Detalle de revisión.** Tareas agrupadas por área, con las marcas *si aplica*, *solo mano de obra* y *si amerita*. En la Revisión B también se listan los repuestos incluidos.
 4. **Historial.** Registrás servicios hechos (fecha, km, taller y costo) en el teléfono, con AsyncStorage.
 5. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`).
 
-### Reglas del plan FACO
+### Plan de mantenimiento soportado: Honda (FACO, Costa Rica)
 
 - **Revisión A** (Servicio Express) cada **5.000 km**.
 - **Revisión B** cada **20.000 km**. Cuando coincide con una A, la B la reemplaza.
@@ -23,7 +25,8 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 Necesitás Node.js 18 o superior y la app **Expo Go** en el teléfono.
 
 ```bash
-cd mantenimiento-honda
+git clone https://github.com/fabiobenavides/my-cr-honda-maintenance.git
+cd my-cr-honda-maintenance
 npm install
 npx expo start
 ```
@@ -42,7 +45,7 @@ eas build -p android --profile preview
 
 La primera vez EAS te va a pedir crear el proyecto en tu cuenta de Expo. Cuando termine, te da un enlace para descargar el APK.
 
-El paquete de Android es `com.fabiobenavides.mantenimientohonda`.
+El paquete de Android es `com.fabiobenavides.mycarmaintenance`. Este identificador hay que dejarlo definido **antes de publicar por primera vez en Google Play**, porque después no se puede cambiar.
 
 ## Scripts
 

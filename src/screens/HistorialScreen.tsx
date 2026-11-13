@@ -97,5 +97,5 @@ const styles = StyleSheet.create({
   detail: { color: colors.muted, marginTop: 3, fontSize: 14 },
   cost: { marginTop: 8, fontWeight: '700', fontSize: 16, color: colors.ink },
   badgeWrap: { marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  delete: { color: colors.hondaRed, fontWeight: '700' },
+  delete: { color: colors.primary, fontWeight: '700' },
 });
