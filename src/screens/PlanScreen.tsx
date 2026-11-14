@@ -113,7 +113,7 @@ export default function PlanScreen({ navigation }: Props) {
         <Text style={styles.sectionTitle}>Próximas revisiones</Text>
         <Text style={styles.sectionHint}>
           Revisión A cada 5.000 km. La B, cada 20.000 km, reemplaza a la A. A los 80.000 km la B incluye
-          cambio de líquido de radiador (solo mano de obra).
+          cambio de líquido de radiador.
         </Text>
 
         {upcoming.length === 0 ? (
@@ -150,7 +150,7 @@ export default function PlanScreen({ navigation }: Props) {
                   {service.isNext ? <Badge label="Siguiente" tone="red" /> : <Badge label={service.code} />}
                 </View>
                 {service.includesRadiator ? (
-                  <Text style={styles.radiator}>Incluye cambio de líquido de radiador (solo mano de obra).</Text>
+                  <Text style={styles.radiator}>Incluye cambio de líquido de radiador.</Text>
                 ) : null}
                 <Text style={styles.link}>Ver detalle →</Text>
               </Card>
