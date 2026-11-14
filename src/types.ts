@@ -39,6 +39,27 @@ export interface ServiceRecord {
   photoUris?: string[];
 }
 
+/**
+ * Arreglo independiente: algo que se le hizo al carro fuera del plan de la
+ * agencia (una llanta, una batería, un golpe...). Se registra cuando pasa y
+ * no afecta el cálculo de las revisiones por kilometraje.
+ */
+export interface RepairRecord {
+  id: string;
+  /** Fecha ISO (AAAA-MM-DD). */
+  date: string;
+  /** Qué se le hizo, en texto libre. */
+  description: string;
+  /** Monto en colones. */
+  cost: number;
+  /** Taller o lugar, opcional. */
+  workshop?: string;
+  /** Kilometraje al momento del arreglo, opcional. */
+  km?: number;
+  /** URIs locales de fotos opcionales (factura, el repuesto, el daño...). */
+  photoUris?: string[];
+}
+
 export function vehicleLabel(vehicle: Vehicle): string {
   const model = vehicle.model === 'Otros' ? vehicle.modelOther?.trim() || 'Otros' : vehicle.model;
   return `${vehicle.brand} ${model} ${vehicle.year}`;

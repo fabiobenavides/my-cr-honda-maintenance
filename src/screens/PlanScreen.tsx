@@ -172,6 +172,11 @@ export default function PlanScreen({ navigation }: Props) {
             />
             <View style={{ height: 10 }} />
             <SecondaryButton label="Ver historial" onPress={() => navigation.navigate('Historial')} />
+            <View style={{ height: 10 }} />
+            <SecondaryButton
+              label="Registrar arreglo independiente"
+              onPress={() => navigation.navigate('RegistrarArreglo')}
+            />
           </View>
         ) : null}
       </ScrollView>

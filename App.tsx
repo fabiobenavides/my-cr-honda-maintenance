@@ -13,6 +13,7 @@ import type { MainTabParamList, RootStackParamList } from './src/navigation/type
 import DetalleRevisionScreen from './src/screens/DetalleRevisionScreen';
 import HistorialScreen from './src/screens/HistorialScreen';
 import PlanScreen from './src/screens/PlanScreen';
+import RegistrarArregloScreen from './src/screens/RegistrarArregloScreen';
 import RegistrarCarroScreen from './src/screens/RegistrarCarroScreen';
 import RegistrarServicioScreen from './src/screens/RegistrarServicioScreen';
 import { colors } from './src/theme';
@@ -88,6 +89,11 @@ function RootNavigator() {
               name="RegistrarServicio"
               component={RegistrarServicioScreen}
               options={{ title: 'Registrar servicio' }}
+            />
+            <Stack.Screen
+              name="RegistrarArreglo"
+              component={RegistrarArregloScreen}
+              options={{ title: 'Registrar arreglo' }}
             />
             <Stack.Screen
               name="Registrar"

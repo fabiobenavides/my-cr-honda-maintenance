@@ -12,7 +12,8 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 2. **Plan.** Lista las próximas revisiones por kilometraje, con fecha estimada según lo que manejás al mes. La siguiente revisión va destacada.
 3. **Detalle de revisión.** Tareas agrupadas por área, con las marcas *si aplica*, *solo mano de obra* y *si amerita*. En la Revisión B también se listan los repuestos incluidos.
 4. **Historial.** Registrás servicios hechos (fecha, km, taller, costo y hasta 5 fotos opcionales, por ejemplo la factura o un escaneo) en el teléfono, con AsyncStorage.
-5. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`).
+5. **Arreglos independientes.** Anotás arreglos que le hacés al carro fuera del plan (una batería, una llanta, un golpe): fecha, qué se le hizo, monto en colones, y de forma opcional el taller o lugar, el kilometraje y hasta 5 fotos. Se registran cuando pasan, no se estiman por kilometraje y no cambian las revisiones sugeridas. Si traen un kilometraje mayor al actual del carro, se actualiza, igual que con los servicios. En el historial aparecen junto a las revisiones, ordenados por fecha, con la etiqueta *Arreglo* y el total gastado.
+6. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`).
 
 ### Plan de mantenimiento soportado: Honda (FACO, Costa Rica)
 
@@ -93,7 +94,8 @@ src/lib/schedule.test.ts     # Pruebas Jest
 src/lib/storage.ts           # Persistencia local con AsyncStorage
 src/lib/notifications.ts     # Recordatorio de la próxima revisión
 src/screens/                 # Pantallas en español
-src/context/AppContext.tsx   # Vehículo e historial
+src/lib/repairs.ts           # Arreglos independientes: validación, historial combinado y total
+src/context/AppContext.tsx   # Vehículo, historial y arreglos
 ```
 
 Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan. Más adelante se pueden agregar otras agencias o marcas sin reescribir las pantallas.
@@ -117,7 +119,8 @@ Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan.
   - Every 80,000 km (and multiples), Revision B includes a radiator coolant change (labor only).
 - **Revision detail.** Tasks grouped by area, with flags such as *if applicable*, *labor only*, and *if warranted*. Revision B also lists included parts.
 - **Register a service.** Log completed work (date, mileage, workshop, and cost in Costa Rican colones) with up to 5 optional photos, such as an invoice, a scan, or a test result.
-- **Service history.** Review past services, open photos in a full-screen viewer, and delete records (including on web).
+- **Service history.** Review past services and repairs, open photos in a full-screen viewer, and delete records (including on web).
+- **Independent repairs.** Log work done outside the maintenance plan (a battery, a tire, body work) when it happens: date, what was done, and amount in colones, plus optional workshop/place, mileage, and up to 5 photos. Repairs are not estimated by mileage and do not change the suggested services; if a repair's mileage is higher than the car's current mileage, it is updated, just like with services. They appear in the history next to services, sorted by date, labeled *Arreglo*, with a total spent.
 - **Reminder.** On Android and iOS, schedules a local notification for the estimated date of the next service (`expo-notifications`). Reminders are not scheduled on web.
-- **Local storage.** Vehicle and history are saved on the device with AsyncStorage.
+- **Local storage.** Vehicle, history, and repairs are saved on the device with AsyncStorage.
 - **Built with Expo and React Native** (TypeScript), for Android, iOS, and web.

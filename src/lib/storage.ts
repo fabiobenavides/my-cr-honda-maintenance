@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ServiceRecord, Vehicle } from '../types';
+import type { RepairRecord, ServiceRecord, Vehicle } from '../types';
 
 const VEHICLE_KEY = '@my-car-maintenance/vehicle';
 const HISTORY_KEY = '@my-car-maintenance/history';
+/** Clave aparte para no mezclar arreglos con el historial que usa el plan. */
+const REPAIRS_KEY = '@my-car-maintenance/repairs';
 const LEGACY_VEHICLE_KEY = '@mantenimiento-honda/vehicle';
 const LEGACY_HISTORY_KEY = '@mantenimiento-honda/history';
 
@@ -48,4 +50,19 @@ export async function loadHistory(): Promise<ServiceRecord[]> {
 
 export async function saveHistory(history: ServiceRecord[]): Promise<void> {
   await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+export async function loadRepairs(): Promise<RepairRecord[]> {
+  const raw = await AsyncStorage.getItem(REPAIRS_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as RepairRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveRepairs(repairs: RepairRecord[]): Promise<void> {
+  await AsyncStorage.setItem(REPAIRS_KEY, JSON.stringify(repairs));
 }
