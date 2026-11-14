@@ -3,17 +3,22 @@ import { getPlan } from '../data/faco-honda';
 import { scheduleNextServiceReminder } from '../lib/notifications';
 import { upcomingServices } from '../lib/schedule';
 import { deleteRemovedPhotos } from '../lib/photos';
-import { loadHistory, loadVehicle, saveHistory, saveVehicle } from '../lib/storage';
-import type { ServiceRecord, Vehicle } from '../types';
+import { sortRepairs } from '../lib/repairs';
+import { loadHistory, loadRepairs, loadVehicle, saveHistory, saveRepairs, saveVehicle } from '../lib/storage';
+import type { RepairRecord, ServiceRecord, Vehicle } from '../types';
 
 type AppContextValue = {
   ready: boolean;
   vehicle: Vehicle | null;
   history: ServiceRecord[];
+  /** Arreglos independientes. No entran en el cálculo del plan. */
+  repairs: RepairRecord[];
   saveVehicleData: (vehicle: Vehicle) => Promise<void>;
   addService: (record: ServiceRecord) => Promise<void>;
   updateService: (id: string, patch: Partial<ServiceRecord>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
+  addRepair: (record: RepairRecord) => Promise<void>;
+  deleteRepair: (id: string) => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -22,19 +27,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [history, setHistory] = useState<ServiceRecord[]>([]);
+  const [repairs, setRepairs] = useState<RepairRecord[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [storedVehicle, storedHistory] = await Promise.all([loadVehicle(), loadHistory()]);
+        const [storedVehicle, storedHistory, storedRepairs] = await Promise.all([
+          loadVehicle(),
+          loadHistory(),
+          loadRepairs(),
+        ]);
         if (cancelled) return;
         setVehicle(storedVehicle);
         setHistory(storedHistory);
+        setRepairs(sortRepairs(storedRepairs));
       } catch {
         if (cancelled) return;
         setVehicle(null);
         setHistory([]);
+        setRepairs([]);
       } finally {
         if (!cancelled) setReady(true);
       }
@@ -99,9 +111,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const addRepair = useCallback(async (record: RepairRecord) => {
+    setRepairs((current) => {
+      const next = sortRepairs([record, ...current]);
+      void saveRepairs(next);
+      return next;
+    });
+  }, []);
+
+  const deleteRepair = useCallback(async (id: string) => {
+    setRepairs((current) => {
+      const record = current.find((item) => item.id === id);
+      if (record?.photoUris?.length) {
+        void deleteRemovedPhotos(record.photoUris, undefined, 'service');
+      }
+      const next = current.filter((item) => item.id !== id);
+      void saveRepairs(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ ready, vehicle, history, saveVehicleData, addService, updateService, deleteService }),
-    [ready, vehicle, history, saveVehicleData, addService, updateService, deleteService],
+    () => ({
+      ready,
+      vehicle,
+      history,
+      repairs,
+      saveVehicleData,
+      addService,
+      updateService,
+      deleteService,
+      addRepair,
+      deleteRepair,
+    }),
+    [ready, vehicle, history, repairs, saveVehicleData, addService, updateService, deleteService, addRepair, deleteRepair],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { ServiceRecord, Vehicle } from '../types';
-import { loadHistory, loadVehicle, saveHistory, saveVehicle } from './storage';
+import type { RepairRecord, ServiceRecord, Vehicle } from '../types';
+import { loadHistory, loadRepairs, loadVehicle, saveHistory, saveRepairs, saveVehicle } from './storage';
 
 const store = new Map<string, string>();
 
@@ -146,3 +146,42 @@ describe('storage', () => {
     await saveHistory(withPhotos);
     await expect(loadHistory()).resolves.toEqual(withPhotos);
   });
+
+describe('storage de arreglos', () => {
+  beforeEach(() => {
+    store.clear();
+  });
+
+  const repairs: RepairRecord[] = [
+    {
+      id: 'r1',
+      date: '2026-11-05',
+      description: 'Cambio de batería',
+      cost: 85_000,
+      workshop: 'Baterías del Sur',
+      km: 46_200,
+      photoUris: ['file:///documents/service-photos/factura-bateria.jpg'],
+    },
+  ];
+
+  it('guarda y lee arreglos en su propia clave sin tocar el historial', async () => {
+    await saveHistory(history);
+    await saveRepairs(repairs);
+    expect(store.has('@my-car-maintenance/repairs')).toBe(true);
+    await expect(loadRepairs()).resolves.toEqual(repairs);
+    await expect(loadHistory()).resolves.toEqual(history);
+  });
+
+  it('devuelve lista vacía si no hay arreglos (datos de versiones anteriores)', async () => {
+    store.set('@my-car-maintenance/history', JSON.stringify(history));
+    await expect(loadRepairs()).resolves.toEqual([]);
+    await expect(loadHistory()).resolves.toEqual(history);
+  });
+
+  it('ignora datos corruptos de arreglos', async () => {
+    store.set('@my-car-maintenance/repairs', '{no es json');
+    await expect(loadRepairs()).resolves.toEqual([]);
+    store.set('@my-car-maintenance/repairs', JSON.stringify({ foo: 1 }));
+    await expect(loadRepairs()).resolves.toEqual([]);
+  });
+});

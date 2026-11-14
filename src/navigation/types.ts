@@ -12,6 +12,7 @@ export type RootStackParamList = {
     prefillCode?: string;
     includesRadiator?: boolean;
   } | undefined;
+  RegistrarArreglo: undefined;
 };
 
 export type MainTabParamList = {
