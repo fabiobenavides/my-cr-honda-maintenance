@@ -152,7 +152,6 @@ const revisionBTasks: MaintenanceTask[] = [
     id: 'b-liquido-radiador',
     name: 'Cambio de líquido de radiador',
     area: 'Dirección y refrigeración',
-    flags: ['solo_mano_de_obra'],
     onlyEveryKm: 80_000,
   },
   { id: 'b-presion-llantas', name: 'Medición de presión de llantas', area: 'Llantas' },

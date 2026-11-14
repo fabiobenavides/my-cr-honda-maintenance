@@ -44,7 +44,7 @@ export default function DetalleRevisionScreen({ navigation, route }: Props) {
       {includesRadiator ? (
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
-            En este kilometraje la Revisión B incluye cambio de líquido de radiador (solo mano de obra).
+            En este kilometraje la Revisión B incluye cambio de líquido de radiador.
           </Text>
         </View>
       ) : null}

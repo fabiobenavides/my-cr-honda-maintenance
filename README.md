@@ -19,7 +19,7 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 
 - **Revisión A** (Servicio Express) cada **5.000 km**.
 - **Revisión B** cada **20.000 km**. Cuando coincide con una A, la B la reemplaza.
-- A los **80.000 km** (y múltiplos), la B incluye cambio de líquido de radiador (solo mano de obra).
+- A los **80.000 km** (y múltiplos), la B incluye cambio de líquido de radiador.
 
 
 ## Capturas de pantalla
@@ -116,7 +116,7 @@ Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan.
 - **Maintenance plan.** Upcoming FACO-style Honda services by mileage, with an estimated date based on monthly driving. The next service is highlighted.
   - Revision A (Express Service) every 5,000 km.
   - Revision B every 20,000 km. When it coincides with an A, B replaces it.
-  - Every 80,000 km (and multiples), Revision B includes a radiator coolant change (labor only).
+  - Every 80,000 km (and multiples), Revision B includes a radiator coolant change.
 - **Revision detail.** Tasks grouped by area, with flags such as *if applicable*, *labor only*, and *if warranted*. Revision B also lists included parts.
 - **Register a service.** Log completed work (date, mileage, workshop, and cost in Costa Rican colones) with up to 5 optional photos, such as an invoice, a scan, or a test result.
 - **Service history.** Review past services and repairs, open photos in a full-screen viewer, and delete records (including on web).
