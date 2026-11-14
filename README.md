@@ -105,3 +105,19 @@ Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan.
 - El recordatorio pide permiso de notificaciones. Si lo denegás, el plan y el historial siguen funcionando.
 - En la web, las fotos se guardan en el almacenamiento del navegador, que es limitado. Las imágenes muy grandes se reducen al guardarlas; aun así, varias fotos pueden llenar ese espacio. En el celular no pasa eso.
 - Esta app no sustituye el criterio del taller; es una guía del plan publicado por la agencia.
+
+## Features (English summary)
+
+> Independent app. Not affiliated with, sponsored by, or endorsed by Honda or Franz Amrhein & Co. (FACO). Trademarks belong to their respective owners.
+
+- **Register a car.** Honda is the only supported brand for now. Choose the model (Civic, CR-V, HR-V, Pilot, Accord, City, or other), year, current mileage, and average kilometers per month. You can also add a license plate number and up to 6 optional photos of the car.
+- **Maintenance plan.** Upcoming FACO-style Honda services by mileage, with an estimated date based on monthly driving. The next service is highlighted.
+  - Revision A (Express Service) every 5,000 km.
+  - Revision B every 20,000 km. When it coincides with an A, B replaces it.
+  - Every 80,000 km (and multiples), Revision B includes a radiator coolant change (labor only).
+- **Revision detail.** Tasks grouped by area, with flags such as *if applicable*, *labor only*, and *if warranted*. Revision B also lists included parts.
+- **Register a service.** Log completed work (date, mileage, workshop, and cost in Costa Rican colones) with up to 5 optional photos, such as an invoice, a scan, or a test result.
+- **Service history.** Review past services, open photos in a full-screen viewer, and delete records (including on web).
+- **Reminder.** On Android and iOS, schedules a local notification for the estimated date of the next service (`expo-notifications`). Reminders are not scheduled on web.
+- **Local storage.** Vehicle and history are saved on the device with AsyncStorage.
+- **Built with Expo and React Native** (TypeScript), for Android, iOS, and web.
