@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Upright bold sans-serif H for My Car Maintenance.
+       Deliberately not Honda's logo: vertical stems of equal width,
+       no slant or trapezoid, no Honda red, no wordmark. Color: app teal #0F6B7A. -->
+  <rect width="1024" height="1024" fill="#0F6B7A"/>
+  <g fill="#FFFFFF">
+    <rect x="280" y="232" width="128" height="560" rx="24" ry="24" />
+    <rect x="616" y="232" width="128" height="560" rx="24" ry="24" />
+    <rect x="280" y="446" width="464" height="116" rx="24" ry="24" />
+  </g>
+</svg>
