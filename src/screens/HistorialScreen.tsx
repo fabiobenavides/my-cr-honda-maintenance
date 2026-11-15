@@ -116,7 +116,7 @@ export default function HistorialScreen({ navigation }: Props) {
 
             const record = entry.record;
             const label = `Revisión ${record.serviceCode} a los ${formatKm(record.km)}`;
-            const pendingCount = pendingTaskCountForRecord(record, plan);
+            const pendingCount = pendingTaskCountForRecord(record, plan, vehicle);
             return (
               <Card key={`service-${record.id}`} style={styles.card}>
                 <View style={styles.row}>

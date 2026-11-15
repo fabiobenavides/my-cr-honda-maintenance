@@ -3,8 +3,11 @@ import {
   tasksForService,
   type MaintenancePlan,
   type MaintenanceTask,
+  type VehicleModelInfo,
 } from '../data/faco-honda';
-import type { ServiceRecord } from '../types';
+import { TIME_RULES, type TimeRule } from '../data/honda-manual';
+import type { ServiceRecord, Vehicle } from '../types';
+import { parseIsoDate } from './format';
 
 export const INTERVAL_A_KM = 5_000;
 export const INTERVAL_B_KM = 20_000;
@@ -21,6 +24,13 @@ export type UpcomingService = {
   includesRadiator: boolean;
   estimatedDate: Date | null;
   isNext: boolean;
+  /**
+   * Fecha límite por tiempo (aceite cada 6 meses, líquido de frenos cada 3 años)
+   * cuando llega antes que la fecha estimada por kilometraje.
+   */
+  timeDueDate?: Date | null;
+  /** Reglas de tiempo que adelantan esta revisión. */
+  timeRuleIds?: TimeRule['id'][];
 };
 
 /**
@@ -154,11 +164,12 @@ export type PendingTaskItem = {
 export function pendingTasksForRecord(
   record: ServiceRecord,
   plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
 ): MaintenanceTask[] {
   if (record.completedTaskIds == null) {
     return [];
   }
-  const expected = tasksForService(plan, record.serviceCode, record.km);
+  const expected = tasksForService(plan, record.serviceCode, record.km, vehicle);
   const done = new Set(record.completedTaskIds);
   return expected.filter((task) => !done.has(task.id));
 }
@@ -169,10 +180,11 @@ export function pendingTasksForRecord(
 export function pendingTasksFromHistory(
   history: ServiceRecord[],
   plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
 ): PendingTaskItem[] {
   const items: PendingTaskItem[] = [];
   for (const record of history) {
-    for (const task of pendingTasksForRecord(record, plan)) {
+    for (const task of pendingTasksForRecord(record, plan, vehicle)) {
       items.push({
         recordId: record.id,
         km: record.km,
@@ -190,6 +202,179 @@ export function pendingTasksFromHistory(
 export function pendingTaskCountForRecord(
   record: ServiceRecord,
   plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
 ): number {
-  return pendingTasksForRecord(record, plan).length;
+  return pendingTasksForRecord(record, plan, vehicle).length;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Límites por tiempo (lo que ocurra primero: km o fecha)                    */
+/* ------------------------------------------------------------------------ */
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+/** Días antes del vencimiento en que un recordatorio pasa a "pronto". */
+export const SOON_DAYS = 30;
+
+/** Suma meses calendario; si el día no existe (31 → feb), usa el último día del mes. */
+export function addMonths(date: Date, months: number): Date {
+  const result = new Date(date.getTime());
+  const day = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(day, lastDay));
+  return result;
+}
+
+/** true si el registro incluye (y marcó como hecha) alguna de las tareas. */
+export function recordIncludesTask(
+  record: ServiceRecord,
+  taskIds: string[],
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
+): boolean {
+  const expected = tasksForService(plan, record.serviceCode, record.km, vehicle).map((t) => t.id);
+  const relevant = taskIds.filter((id) => expected.includes(id));
+  if (relevant.length === 0) return false;
+  if (record.completedTaskIds == null) return true;
+  return relevant.some((id) => record.completedTaskIds!.includes(id));
+}
+
+/** Fecha del último servicio que hizo alguna de las tareas, o null. */
+export function lastDoneDate(
+  history: ServiceRecord[],
+  taskIds: string[],
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
+): Date | null {
+  let latest: Date | null = null;
+  for (const record of history) {
+    if (!recordIncludesTask(record, taskIds, plan, vehicle)) continue;
+    const date = parseIsoDate(record.date);
+    if (date && (!latest || date.getTime() > latest.getTime())) {
+      latest = date;
+    }
+  }
+  return latest;
+}
+
+/** Fecha desde la que se cuenta si no hay servicios: registro del carro en la app. */
+export function vehicleBaseDate(vehicle: Pick<Vehicle, 'registeredAt' | 'updatedAt'>): Date | null {
+  for (const value of [vehicle.registeredAt, vehicle.updatedAt]) {
+    if (!value) continue;
+    const date = parseIsoDate(value.slice(0, 10)) ?? new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+export type TimeReminderStatus = 'vencido' | 'pronto' | 'al-dia';
+
+export type TimeReminder = {
+  rule: TimeRule;
+  /** Último servicio que hizo la tarea; null si no hay. */
+  lastDoneDate: Date | null;
+  /** Desde dónde se cuenta (último servicio o registro del carro). */
+  baseDate: Date;
+  /** Vencimiento por tiempo. */
+  dueDate: Date;
+  /** Fecha estimada de la próxima revisión que incluye la tarea (por km). */
+  kmDueDate: Date | null;
+  /** Kilometraje de esa revisión. */
+  kmDueKm: number | null;
+  /** Qué llega primero. */
+  dueBy: 'tiempo' | 'km';
+  status: TimeReminderStatus;
+  /** Días que faltan (negativo si ya venció). */
+  daysLeft: number;
+};
+
+function upcomingIncludesRule(
+  service: UpcomingService,
+  rule: TimeRule,
+  plan: MaintenancePlan,
+  vehicle?: VehicleModelInfo | null,
+): boolean {
+  const ids = tasksForService(plan, service.code, service.km, vehicle).map((task) => task.id);
+  return rule.taskIds.some((id) => ids.includes(id));
+}
+
+/**
+ * Recordatorios por tiempo: cada regla vence a los N meses del último servicio
+ * que hizo la tarea (o del registro del carro si no hay ninguno). Se compara
+ * con la fecha estimada por km de la próxima revisión que la incluye.
+ */
+export function timeReminders(
+  vehicle: Vehicle,
+  history: ServiceRecord[],
+  options: {
+    upcoming?: UpcomingService[];
+    plan?: MaintenancePlan;
+    now?: Date;
+    rules?: TimeRule[];
+  } = {},
+): TimeReminder[] {
+  const plan = options.plan ?? FACO_HONDA_PLAN;
+  const now = options.now ?? new Date();
+  const rules = options.rules ?? TIME_RULES;
+  const upcoming = options.upcoming ?? [];
+  const fallback = vehicleBaseDate(vehicle) ?? now;
+
+  return rules.map((rule) => {
+    const last = lastDoneDate(history, rule.taskIds, plan, vehicle);
+    const baseDate = last ?? fallback;
+    const dueDate = addMonths(baseDate, rule.everyMonths);
+    const kmService = upcoming.find((service) => upcomingIncludesRule(service, rule, plan, vehicle));
+    const kmDueDate = kmService?.estimatedDate ?? null;
+    const dueBy: 'tiempo' | 'km' =
+      kmDueDate && kmDueDate.getTime() <= dueDate.getTime() ? 'km' : 'tiempo';
+    const daysLeft = Math.ceil((dueDate.getTime() - now.getTime()) / MS_PER_DAY);
+    const status: TimeReminderStatus =
+      daysLeft <= 0 ? 'vencido' : daysLeft <= SOON_DAYS ? 'pronto' : 'al-dia';
+    return {
+      rule,
+      lastDoneDate: last,
+      baseDate,
+      dueDate,
+      kmDueDate,
+      kmDueKm: kmService?.km ?? null,
+      dueBy,
+      status,
+      daysLeft,
+    };
+  });
+}
+
+/**
+ * Marca en cada revisión próxima la fecha límite por tiempo cuando llega antes
+ * que la estimada por km. Cada regla se aplica solo a la primera revisión que
+ * incluye su tarea.
+ */
+export function applyTimeLimits(
+  upcoming: UpcomingService[],
+  reminders: TimeReminder[],
+  plan: MaintenancePlan = FACO_HONDA_PLAN,
+  vehicle?: VehicleModelInfo | null,
+): UpcomingService[] {
+  const result = upcoming.map((service) => ({ ...service }));
+  for (const reminder of reminders) {
+    if (reminder.dueBy !== 'tiempo') continue;
+    const target = result.find((service) => upcomingIncludesRule(service, reminder.rule, plan, vehicle));
+    if (!target) continue;
+    if (target.estimatedDate && target.estimatedDate.getTime() <= reminder.dueDate.getTime()) continue;
+    if (!target.timeDueDate || reminder.dueDate.getTime() < target.timeDueDate.getTime()) {
+      target.timeDueDate = reminder.dueDate;
+    }
+    target.timeRuleIds = [...(target.timeRuleIds ?? []), reminder.rule.id];
+  }
+  return result;
+}
+
+/** Fecha en que realmente toca la revisión: la primera entre km y tiempo. */
+export function effectiveDueDate(service: UpcomingService): Date | null {
+  const candidates = [service.estimatedDate, service.timeDueDate].filter(
+    (date): date is Date => date instanceof Date && !Number.isNaN(date.getTime()),
+  );
+  if (candidates.length === 0) return null;
+  return candidates.reduce((min, date) => (date.getTime() < min.getTime() ? date : min));
 }

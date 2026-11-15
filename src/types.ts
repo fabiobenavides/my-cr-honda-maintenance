@@ -19,6 +19,11 @@ export interface Vehicle {
   currentKm: number;
   avgKmPerMonth: number;
   updatedAt: string;
+  /**
+   * Cuándo se registró el carro en la app (ISO). Base para los recordatorios por
+   * tiempo si todavía no hay servicios. Ausente en datos antiguos (se usa updatedAt).
+   */
+  registeredAt?: string;
   /** Número de placa, opcional. Ya normalizado (mayúsculas, sin espacios). */
   plate?: string;
   /** URIs locales de fotos opcionales del vehículo. */

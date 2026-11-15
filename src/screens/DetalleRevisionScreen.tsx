@@ -2,7 +2,22 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badge, Card, FlagBadges, PrimaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
-import { FACO_HONDA_PLAN, getPlan, getServiceType, groupTasksByArea, tasksForService } from '../data/faco-honda';
+import {
+  FACO_HONDA_PLAN,
+  getPlan,
+  getServiceType,
+  groupTasksByArea,
+  includedPartsForService,
+  tasksForService,
+} from '../data/faco-honda';
+import {
+  HONDA_EXTRA_LABEL,
+  HONDA_MANUAL_SOURCE,
+  hondaExtrasAtKm,
+  hondaIntervalFor,
+  hondaNoteFor,
+  manualAppliesTo,
+} from '../data/honda-manual';
 import { formatDate, formatKm } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../theme';
@@ -14,7 +29,10 @@ export default function DetalleRevisionScreen({ navigation, route }: Props) {
   const { km, code, includesRadiator, estimatedDate } = route.params;
   const plan = (vehicle && getPlan(vehicle.brand, vehicle.dealerId)) || FACO_HONDA_PLAN;
   const service = getServiceType(plan, code);
-  const tasks = tasksForService(plan, code, km);
+  const tasks = tasksForService(plan, code, km, vehicle);
+  const includedParts = includedPartsForService(plan, code, vehicle);
+  const extras = hondaExtrasAtKm(km, vehicle);
+  const showManual = manualAppliesTo(vehicle);
   const grouped = groupTasksByArea(tasks);
   const estimated = estimatedDate ? new Date(estimatedDate) : null;
   const existingRecord = history.find((record) => record.km === km);
@@ -49,20 +67,36 @@ export default function DetalleRevisionScreen({ navigation, route }: Props) {
         </View>
       ) : null}
 
+      {showManual ? (
+        <Text style={styles.manualHint}>
+          Entre paréntesis: lo que propone el {HONDA_MANUAL_SOURCE.title} para ese punto, como referencia.
+        </Text>
+      ) : null}
+
       {grouped.map((group) => (
         <View key={group.area} style={styles.group}>
           <Text style={styles.groupTitle}>{group.area}</Text>
           <Card>
             {group.tasks.map((task, index) => {
               const done = !showTaskStatus ? null : completedIds!.has(task.id);
+              const interval = hondaIntervalFor(task.id, vehicle);
+              const note = hondaNoteFor(task.id, vehicle);
               return (
                 <View key={task.id} style={[styles.task, index < group.tasks.length - 1 && styles.taskBorder]}>
                   <View style={styles.taskHeader}>
-                    <Text style={styles.taskName}>{task.name}</Text>
+                    <Text style={styles.taskName}>
+                      {task.name}
+                      {interval ? <Text style={styles.interval}>{` (Honda: ${interval})`}</Text> : null}
+                    </Text>
                     {done === true ? <Badge label="Hecha" tone="green" /> : null}
                     {done === false ? <Badge label="Pendiente" tone="red" /> : null}
                   </View>
                   <FlagBadges flags={task.flags} />
+                  {note ? (
+                    <View style={styles.manualNote}>
+                      <Text style={styles.manualNoteText}>{note}</Text>
+                    </View>
+                  ) : null}
                 </View>
               );
             })}
@@ -70,14 +104,29 @@ export default function DetalleRevisionScreen({ navigation, route }: Props) {
         </View>
       ))}
 
-      {service?.includedParts?.length ? (
+      {extras.length > 0 ? (
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>{HONDA_EXTRA_LABEL}</Text>
+          <Text style={styles.manualHint}>No forma parte del plan de {plan.dealerName}. Consultalo en el taller.</Text>
+          <Card>
+            {extras.map((item, index) => (
+              <View key={item.id} style={[styles.task, index < extras.length - 1 && styles.taskBorder]}>
+                <Text style={styles.taskName}>{item.name}</Text>
+                {item.note ? <Text style={styles.extraNote}>{item.note}</Text> : null}
+              </View>
+            ))}
+          </Card>
+        </View>
+      ) : null}
+
+      {includedParts.length ? (
         <View style={styles.group}>
           <Text style={styles.groupTitle}>Repuestos incluidos</Text>
           <Card>
-            {service.includedParts.map((part, index) => (
+            {includedParts.map((part, index) => (
               <View
                 key={part.id}
-                style={[styles.task, index < service.includedParts!.length - 1 && styles.taskBorder]}
+                style={[styles.task, index < includedParts.length - 1 && styles.taskBorder]}
               >
                 <View style={styles.partRow}>
                   <Text style={styles.taskName}>{part.name}</Text>
@@ -142,6 +191,16 @@ const styles = StyleSheet.create({
   taskBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   taskHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   taskName: { fontSize: 15, color: colors.ink, flex: 1 },
+  interval: { color: colors.muted, fontSize: 13 },
+  manualHint: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: spacing.sm, marginBottom: 4 },
+  manualNote: {
+    backgroundColor: colors.highlight,
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+  },
+  manualNoteText: { color: colors.primaryDark, fontSize: 13, lineHeight: 19 },
+  extraNote: { color: colors.muted, fontSize: 13, marginTop: 4 },
   partRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   footer: { marginTop: spacing.lg },
 });

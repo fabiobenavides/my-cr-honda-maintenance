@@ -161,6 +161,7 @@ export default function RegistrarCarroScreen({ navigation, route }: Props) {
       currentKm: Math.round(parsedKm),
       avgKmPerMonth: parsedAvg,
       updatedAt: new Date().toISOString(),
+      registeredAt: vehicle?.registeredAt ?? vehicle?.updatedAt ?? new Date().toISOString(),
       plate: normalizedPlate || undefined,
       photoUris: photoUris.length > 0 ? photoUris : undefined,
     };

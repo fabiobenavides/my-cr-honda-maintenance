@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getPlan } from '../data/faco-honda';
 import { scheduleNextServiceReminder } from '../lib/notifications';
-import { upcomingServices } from '../lib/schedule';
+import { applyTimeLimits, timeReminders, upcomingServices } from '../lib/schedule';
 import { deleteRemovedPhotos } from '../lib/photos';
 import { sortRepairs } from '../lib/repairs';
 import { loadHistory, loadRepairs, loadVehicle, saveHistory, saveRepairs, saveVehicle } from '../lib/storage';
@@ -62,13 +62,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
     const plan = getPlan(nextVehicle.brand, nextVehicle.dealerId);
-    const next = upcomingServices(nextVehicle.currentKm, {
-      count: 1,
+    const byKm = upcomingServices(nextVehicle.currentKm, {
+      count: 12,
       completedKms: nextHistory.map((record) => record.km),
       kmPerMonth: nextVehicle.avgKmPerMonth,
       plan,
-    })[0];
-    await scheduleNextServiceReminder(next);
+    });
+    const reminders = timeReminders(nextVehicle, nextHistory, { upcoming: byKm, plan });
+    const next = applyTimeLimits(byKm, reminders, plan, nextVehicle)[0];
+    await scheduleNextServiceReminder(next, reminders);
   }, []);
 
   useEffect(() => {

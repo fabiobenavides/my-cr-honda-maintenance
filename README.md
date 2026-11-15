@@ -13,7 +13,12 @@ Está hecha con **Expo** y **React Native** en TypeScript. Podés generar un APK
 3. **Detalle de revisión.** Tareas agrupadas por área, con las marcas *si aplica*, *solo mano de obra* y *si amerita*. En la Revisión B también se listan los repuestos incluidos.
 4. **Historial.** Registrás servicios hechos (fecha, km, taller, costo y hasta 5 fotos opcionales, por ejemplo la factura o un escaneo) en el teléfono, con AsyncStorage.
 5. **Arreglos independientes.** Anotás arreglos que le hacés al carro fuera del plan (una batería, una llanta, un golpe): fecha, qué se le hizo, monto en colones, y de forma opcional el taller o lugar, el kilometraje y hasta 5 fotos. Se registran cuando pasan, no se estiman por kilometraje y no cambian las revisiones sugeridas. Si traen un kilometraje mayor al actual del carro, se actualiza, igual que con los servicios. En el historial aparecen junto a las revisiones, ordenados por fecha, con la etiqueta *Arreglo* y el total gastado.
-6. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`).
+6. **Recordatorio.** Programa una notificación local para la fecha estimada de la próxima revisión (`expo-notifications`). Si por tiempo toca antes, usa esa fecha.
+7. **Recordatorios por tiempo.** Además del kilometraje, el aceite vence a los 6 meses (programa riguroso) y el líquido de frenos a los 3 años, lo que ocurra primero. Se cuentan desde el último servicio que los hizo o, si no hay, desde que registraste el carro. Se muestran en el Plan y, en Android/iOS, como notificación.
+8. **Referencia del manual de Honda (CR-V 2017–2022).** En el detalle de cada revisión, al lado de cada tarea de FACO se muestra entre paréntesis el intervalo que propone el manual, si lo da (por ejemplo, *Cambio de bujías (Honda: cada 100.000 km)*). Bujías y refrigerante traen una nota para consultar en la agencia si el cambio es necesario. También se agregan, aparte del plan de FACO y con la etiqueta *Recomendado por el manual de Honda*, la revisión de la correa de accesorios (cada 40.000 km), el filtro de combustible en uso riguroso (110.000 km) y el juego de válvulas (120.000 km). Los intervalos de FACO no cambian.
+9. **Tareas por modelo.** En el CR-V (2017 en adelante, freno de estacionamiento eléctrico) se oculta el ajuste de freno de mano, y desde 2012 (dirección eléctrica) el líquido de dirección hidráulica. En los demás modelos se mantienen.
+
+Fuente de los puntos 7 a 9: [Manual del propietario Honda CR-V 2021](https://www.hondauniversidad.mx/static/agency-go-virtual/Honda/Manuales-Honda/CR-V/MANUAL_CR-V_2021.pdf), "Programa de mantenimiento", pp. 667–677 (tabla general de países; motor 2,4 L sin turbo).
 
 ### Plan de mantenimiento soportado: Honda (FACO, Costa Rica)
 
@@ -89,6 +94,7 @@ App.tsx                      # Navegación (registro, plan, detalle, historial)
 app.json                     # Configuración de Expo y paquete de Android
 eas.json                     # Perfil preview → APK
 src/data/faco-honda.ts       # Plan FACO, pensado para sumar otras marcas después
+src/data/honda-manual.ts     # Intervalos, notas, extras y límites por tiempo del manual Honda CR-V 2021
 src/lib/schedule.ts          # Lógica pura: qué revisión toca y fechas estimadas
 src/lib/schedule.test.ts     # Pruebas Jest
 src/lib/storage.ts           # Persistencia local con AsyncStorage
@@ -121,6 +127,10 @@ Los datos del plan están separados de la interfaz: `brand` / `dealer` → plan.
 - **Register a service.** Log completed work (date, mileage, workshop, and cost in Costa Rican colones) with up to 5 optional photos, such as an invoice, a scan, or a test result.
 - **Service history.** Review past services and repairs, open photos in a full-screen viewer, and delete records (including on web).
 - **Independent repairs.** Log work done outside the maintenance plan (a battery, a tire, body work) when it happens: date, what was done, and amount in colones, plus optional workshop/place, mileage, and up to 5 photos. Repairs are not estimated by mileage and do not change the suggested services; if a repair's mileage is higher than the car's current mileage, it is updated, just like with services. They appear in the history next to services, sorted by date, labeled *Arreglo*, with a total spent.
-- **Reminder.** On Android and iOS, schedules a local notification for the estimated date of the next service (`expo-notifications`). Reminders are not scheduled on web.
+- **Reminder.** On Android and iOS, schedules a local notification for the estimated date of the next service (`expo-notifications`), or the time-based date if it comes first. Reminders are not scheduled on web.
+- **Time-based reminders.** Besides mileage, engine oil is due every 6 months (severe schedule) and brake fluid every 3 years, whichever comes first, counted from the last service that did them (or from when the car was registered).
+- **Honda owner's manual reference (CR-V 2017–2022).** The revision detail shows, in parentheses next to each FACO task, the interval from Honda's manual when it gives one (e.g. spark plugs every 100,000 km), with a note on spark plugs and coolant to ask the dealer whether the change is needed. Extra items not in the FACO plan are labeled *Recomendado por el manual de Honda*: drive belt inspection (every 40,000 km), fuel filter under severe use (110,000 km) and valve clearance (120,000 km). FACO intervals are unchanged.
+- **Model-specific tasks.** For the CR-V, the handbrake adjustment (electric parking brake, 2017+) and power steering fluid (electric steering, 2012+) are hidden.
+- Source: [Honda CR-V 2021 owner's manual (Spanish)](https://www.hondauniversidad.mx/static/agency-go-virtual/Honda/Manuales-Honda/CR-V/MANUAL_CR-V_2021.pdf), maintenance schedule, pp. 667–677 (general-countries table, 2.4 L non-turbo).
 - **Local storage.** Vehicle, history, and repairs are saved on the device with AsyncStorage.
 - **Built with Expo and React Native** (TypeScript), for Android, iOS, and web.

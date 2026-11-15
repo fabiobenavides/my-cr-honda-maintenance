@@ -25,6 +25,24 @@ export const TASK_FLAG_LABELS: Record<TaskFlag, string> = {
   si_amerita: 'Si amerita',
 };
 
+/** Datos mínimos del carro para decidir qué tareas le aplican. */
+export interface VehicleModelInfo {
+  model: string;
+  year: number;
+}
+
+/**
+ * Regla para ocultar una tarea en ciertos modelos (por ejemplo, el CR-V con
+ * freno de estacionamiento eléctrico no lleva ajuste de freno de mano).
+ */
+export interface ModelExclusion {
+  model: string;
+  /** Desde qué año modelo aplica la exclusión (inclusive). */
+  fromYear?: number;
+  /** Motivo, para documentar en el código y en pruebas. */
+  reason: string;
+}
+
 export interface MaintenanceTask {
   id: string;
   name: string;
@@ -32,13 +50,31 @@ export interface MaintenanceTask {
   flags?: TaskFlag[];
   /** Solo se incluye cuando el kilometraje del servicio es múltiplo de este valor. */
   onlyEveryKm?: number;
+  /** Modelos en los que esta tarea no aplica. */
+  excludeFor?: ModelExclusion[];
 }
 
 export interface IncludedPart {
   id: string;
   name: string;
   flags?: TaskFlag[];
+  /** Modelos en los que este repuesto no aplica. */
+  excludeFor?: ModelExclusion[];
 }
+
+/** Freno de estacionamiento eléctrico (EPB): CR-V desde la 5.ª generación (2017). */
+const CRV_EPB: ModelExclusion = {
+  model: 'CR-V',
+  fromYear: 2017,
+  reason: 'Freno de estacionamiento eléctrico (EPB); el manual indica "excepto EPB".',
+};
+
+/** Dirección asistida eléctrica (EPS): CR-V desde la 4.ª generación (2012). */
+const CRV_EPS: ModelExclusion = {
+  model: 'CR-V',
+  fromYear: 2012,
+  reason: 'Dirección asistida eléctrica; no usa líquido de dirección hidráulica.',
+};
 
 export interface ServiceType {
   code: string;
@@ -83,7 +119,7 @@ const revisionATasks: MaintenanceTask[] = [
     area: 'Motor y lubricación',
   },
   { id: 'a-niveles-aceite', name: 'Revisión de todos los niveles de aceite', area: 'Motor y lubricación' },
-  { id: 'a-freno-mano', name: 'Ajuste de freno de mano', area: 'Frenos' },
+  { id: 'a-freno-mano', name: 'Ajuste de freno de mano', area: 'Frenos', excludeFor: [CRV_EPB] },
   { id: 'a-diag-bateria', name: 'Diagnóstico de batería', area: 'Eléctrico y batería' },
   { id: 'a-bornes-bateria', name: 'Limpieza de bornes de batería', area: 'Eléctrico y batería' },
   { id: 'a-luces', name: 'Revisión de luces', area: 'Eléctrico y batería' },
@@ -147,6 +183,7 @@ const revisionBTasks: MaintenanceTask[] = [
     name: 'Cambio de líquido de dirección hidráulica',
     area: 'Dirección y refrigeración',
     flags: ['si_aplica'],
+    excludeFor: [CRV_EPS],
   },
   {
     id: 'b-liquido-radiador',
@@ -190,7 +227,12 @@ const revisionBTasks: MaintenanceTask[] = [
 const revisionBIncludedParts: IncludedPart[] = [
   { id: 'p-aceite-motor', name: 'Aceite de motor' },
   { id: 'p-aceite-diferencial', name: 'Aceite de diferencial', flags: ['si_aplica'] },
-  { id: 'p-liquido-direccion', name: 'Líquido de dirección hidráulica', flags: ['si_aplica'] },
+  {
+    id: 'p-liquido-direccion',
+    name: 'Líquido de dirección hidráulica',
+    flags: ['si_aplica'],
+    excludeFor: [CRV_EPS],
+  },
   { id: 'p-liquido-frenos', name: 'Líquido de frenos' },
   { id: 'p-aceite-transmision', name: 'Aceite de transmisión' },
   { id: 'p-limpiador-admision', name: 'Líquido limpiador de admisión' },
@@ -252,14 +294,40 @@ export function getServiceType(plan: MaintenancePlan, code: string): ServiceType
   return plan.serviceTypes.find((service) => service.code === code);
 }
 
+/** true si la tarea o repuesto aplica al modelo/año indicado (o si no se indica carro). */
+export function appliesToVehicle(
+  item: { excludeFor?: ModelExclusion[] },
+  vehicle?: VehicleModelInfo | null,
+): boolean {
+  if (!vehicle || !item.excludeFor?.length) return true;
+  const model = vehicle.model.trim().toLowerCase();
+  return !item.excludeFor.some(
+    (rule) =>
+      rule.model.toLowerCase() === model && (rule.fromYear == null || vehicle.year >= rule.fromYear),
+  );
+}
+
 export function tasksForService(
   plan: MaintenancePlan,
   code: string,
   serviceKm: number,
+  vehicle?: VehicleModelInfo | null,
 ): MaintenanceTask[] {
   const service = getServiceType(plan, code);
   if (!service) return [];
-  return service.tasks.filter((task) => !task.onlyEveryKm || serviceKm % task.onlyEveryKm === 0);
+  return service.tasks.filter(
+    (task) =>
+      (!task.onlyEveryKm || serviceKm % task.onlyEveryKm === 0) && appliesToVehicle(task, vehicle),
+  );
+}
+
+export function includedPartsForService(
+  plan: MaintenancePlan,
+  code: string,
+  vehicle?: VehicleModelInfo | null,
+): IncludedPart[] {
+  const service = getServiceType(plan, code);
+  return (service?.includedParts ?? []).filter((part) => appliesToVehicle(part, vehicle));
 }
 
 export function groupTasksByArea(tasks: MaintenanceTask[]): { area: TaskArea; tasks: MaintenanceTask[] }[] {
