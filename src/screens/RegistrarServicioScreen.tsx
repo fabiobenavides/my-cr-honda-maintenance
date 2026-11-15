@@ -54,8 +54,8 @@ export default function RegistrarServicioScreen({ navigation, route }: Props) {
   const serviceCode = prefillCode ?? inferred?.code ?? 'A';
   const includesRadiator = prefillRadiator ?? inferred?.includesRadiator ?? false;
   const tasks = useMemo(
-    () => (serviceKm > 0 ? tasksForService(plan, serviceCode, serviceKm) : []),
-    [plan, serviceCode, serviceKm],
+    () => (serviceKm > 0 ? tasksForService(plan, serviceCode, serviceKm, vehicle) : []),
+    [plan, serviceCode, serviceKm, vehicle],
   );
   const allTaskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const effectiveSelected = useMemo(() => {

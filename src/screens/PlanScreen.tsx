@@ -7,8 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, Card, PrimaryButton, SecondaryButton } from '../components/ui';
 import { useApp } from '../context/AppContext';
 import { getPlan } from '../data/faco-honda';
+import { HONDA_EXTRA_LABEL, hondaExtrasAtKm } from '../data/honda-manual';
 import { formatDate, formatKm } from '../lib/format';
-import { pendingTasksFromHistory, upcomingServices } from '../lib/schedule';
+import {
+  applyTimeLimits,
+  effectiveDueDate,
+  pendingTasksFromHistory,
+  timeReminders,
+  upcomingServices,
+  type TimeReminder,
+} from '../lib/schedule';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { colors, spacing } from '../theme';
 import { vehicleLabel } from '../types';
@@ -23,14 +31,16 @@ export default function PlanScreen({ navigation }: Props) {
   if (!vehicle) return null;
 
   const plan = getPlan(vehicle.brand, vehicle.dealerId);
-  const upcoming = upcomingServices(vehicle.currentKm, {
+  const byKm = upcomingServices(vehicle.currentKm, {
     count: 12,
     completedKms: history.map((record) => record.km),
     kmPerMonth: vehicle.avgKmPerMonth,
     plan,
   });
+  const reminders = timeReminders(vehicle, history, { upcoming: byKm, plan });
+  const upcoming = applyTimeLimits(byKm, reminders, plan, vehicle);
   const next = upcoming[0];
-  const pendingTasks = plan ? pendingTasksFromHistory(history, plan) : [];
+  const pendingTasks = plan ? pendingTasksFromHistory(history, plan, vehicle) : [];
 
   async function markPendingDone(recordId: string, taskId: string) {
     const record = history.find((item) => item.id === recordId);
@@ -110,10 +120,21 @@ export default function PlanScreen({ navigation }: Props) {
           </View>
         ) : null}
 
+        <View style={styles.pendingSection}>
+          <Text style={styles.sectionTitle}>Recordatorios por tiempo</Text>
+          <Text style={styles.sectionHint}>
+            Según el manual de Honda, aunque no llegués al kilometraje: aceite cada 6 meses (programa riguroso)
+            y líquido de frenos cada 3 años. Lo que ocurra primero.
+          </Text>
+          {reminders.map((reminder) => (
+            <TimeReminderCard key={reminder.rule.id} reminder={reminder} />
+          ))}
+        </View>
+
         <Text style={styles.sectionTitle}>Próximas revisiones</Text>
         <Text style={styles.sectionHint}>
           Revisión A cada 5.000 km. La B, cada 20.000 km, reemplaza a la A. A los 80.000 km la B incluye
-          cambio de líquido de radiador.
+          cambio de líquido de radiador. Si por tiempo toca antes, se muestra esa fecha.
         </Text>
 
         {upcoming.length === 0 ? (
@@ -121,7 +142,11 @@ export default function PlanScreen({ navigation }: Props) {
             <Text style={styles.empty}>No hay revisiones pendientes en el plan.</Text>
           </Card>
         ) : (
-          upcoming.map((service) => (
+          upcoming.map((service) => {
+            const extras = hondaExtrasAtKm(service.km, vehicle);
+            const dueDate = effectiveDueDate(service);
+            const byTime = Boolean(service.timeDueDate && dueDate === service.timeDueDate);
+            return (
             <Pressable
               key={service.km}
               onPress={() =>
@@ -129,7 +154,7 @@ export default function PlanScreen({ navigation }: Props) {
                   km: service.km,
                   code: service.code,
                   includesRadiator: service.includesRadiator,
-                  estimatedDate: service.estimatedDate?.toISOString() ?? null,
+                  estimatedDate: dueDate?.toISOString() ?? null,
                 })
               }
             >
@@ -146,16 +171,31 @@ export default function PlanScreen({ navigation }: Props) {
                           : `Fecha estimada: ${formatDate(service.estimatedDate)}`
                         : 'Sin fecha estimada'}
                     </Text>
+                    {byTime && service.timeDueDate ? (
+                      <Text style={styles.timeDue}>
+                        {service.timeDueDate.getTime() <= Date.now()
+                          ? 'Por tiempo ya venció: '
+                          : 'Por tiempo toca antes: '}
+                        {formatDate(service.timeDueDate)} (
+                        {service.timeRuleIds?.map(timeRuleLabel).join(' y ')})
+                      </Text>
+                    ) : null}
                   </View>
                   {service.isNext ? <Badge label="Siguiente" tone="red" /> : <Badge label={service.code} />}
                 </View>
                 {service.includesRadiator ? (
                   <Text style={styles.radiator}>Incluye cambio de líquido de radiador.</Text>
                 ) : null}
+                {extras.length > 0 ? (
+                  <Text style={styles.extra}>
+                    {HONDA_EXTRA_LABEL}: {extras.map((item) => item.name.toLowerCase()).join(', ')}.
+                  </Text>
+                ) : null}
                 <Text style={styles.link}>Ver detalle →</Text>
               </Card>
             </Pressable>
-          ))
+            );
+          })
         )}
 
         {next ? (
@@ -181,6 +221,41 @@ export default function PlanScreen({ navigation }: Props) {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function timeRuleLabel(id: TimeReminder['rule']['id']): string {
+  return id === 'aceite-motor' ? 'aceite, 6 meses' : 'líquido de frenos, 3 años';
+}
+
+function TimeReminderCard({ reminder }: { reminder: TimeReminder }) {
+  const badge =
+    reminder.status === 'vencido'
+      ? <Badge label="Vencido" tone="red" />
+      : reminder.status === 'pronto'
+        ? <Badge label="Pronto" tone="red" />
+        : <Badge label="Al día" tone="green" />;
+  const main =
+    reminder.dueBy === 'km' && reminder.kmDueDate && reminder.kmDueKm != null
+      ? `Toca antes por km, en la revisión de ${formatKm(reminder.kmDueKm)} (~${formatDate(reminder.kmDueDate)}). Por tiempo vencería el ${formatDate(reminder.dueDate)}.`
+      : reminder.status === 'vencido'
+        ? `Venció por tiempo el ${formatDate(reminder.dueDate)}`
+        : `Vence por tiempo el ${formatDate(reminder.dueDate)}`;
+  const since = reminder.lastDoneDate
+    ? `Último: ${formatDate(reminder.lastDoneDate)}`
+    : `Sin registro todavía; se cuenta desde el ${formatDate(reminder.baseDate)}`;
+  return (
+    <Card style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.flex}>
+          <Text style={styles.pendingTask}>{reminder.rule.name}</Text>
+          <Text style={styles.serviceDate}>{main}</Text>
+          <Text style={styles.pendingMeta}>{since}</Text>
+          <Text style={styles.source}>{reminder.rule.source}</Text>
+        </View>
+        {badge}
+      </View>
+    </Card>
   );
 }
 
@@ -233,6 +308,9 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 16, fontWeight: '800', color: colors.ink },
   serviceDate: { color: colors.muted, marginTop: 4, fontSize: 13 },
   radiator: { marginTop: 8, color: colors.primaryDark, fontSize: 13, fontWeight: '600' },
+  timeDue: { marginTop: 4, color: colors.warningText, fontSize: 13, fontWeight: '700' },
+  extra: { marginTop: 8, color: colors.ink, fontSize: 13, fontStyle: 'italic' },
+  source: { marginTop: 6, color: colors.muted, fontSize: 12, lineHeight: 17 },
   link: { marginTop: 10, color: colors.primary, fontWeight: '700' },
   empty: { color: colors.muted },
   actions: { marginTop: spacing.md },
