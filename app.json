@@ -53,8 +53,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "2922ccf8-0b59-4ed0-950c-46587272fa59"
+        "projectId": "02c96876-d326-41fe-b65c-652343a8494f"
       }
-    }
+    },
+    "owner": "fabiobenavides"
   }
 }
